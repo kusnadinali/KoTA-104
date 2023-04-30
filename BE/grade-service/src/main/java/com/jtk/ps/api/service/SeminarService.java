@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jtk.ps.api.dto.CompanyNameDto;
 import com.jtk.ps.api.dto.ParticipantDto;
@@ -74,7 +75,7 @@ public class SeminarService implements ISeminarService{
     @Autowired
     private ObjectMapper objectMapper;
 
-    private void eventStoreHandler(String entityId, String eventType, Object object){
+    private void eventStoreHandler(String entityId, String eventType, Object object,Integer eventDataId){
         try {
             EventStore eventStore = new EventStore();
 
@@ -82,10 +83,10 @@ public class SeminarService implements ISeminarService{
             eventStore.setEventType(eventType);
             eventStore.setEventTime(LocalDateTime.now());
             eventStore.setEventData(objectMapper.writeValueAsString(object));
+            eventStore.setEventDataId(eventDataId);
 
             eventStoreRepository.save(eventStore);
         } catch (Exception e) {
-            // TODO: handle exception
             e.printStackTrace();
         }
     }
@@ -156,7 +157,7 @@ public class SeminarService implements ISeminarService{
         
         newSeminarCriteria = seminarCriteriaRepository.save(newSeminarCriteria);
 
-        eventStoreHandler("seminar_criteria", "SEMINAR_CRITERIA_ADDED", newSeminarCriteria);
+        eventStoreHandler("seminar_criteria", "SEMINAR_CRITERIA_ADDED", newSeminarCriteria, newSeminarCriteria.getId());
         
         return newSeminarCriteria;
     }
@@ -179,7 +180,7 @@ public class SeminarService implements ISeminarService{
             }
 
             SeminarCriteria temp = seminarCriteriaRepository.save(c);
-            eventStoreHandler("seminar_criteria", "SEMINAR_CRITERIA_UPDATE", temp);
+            eventStoreHandler("seminar_criteria", "SEMINAR_CRITERIA_UPDATE", temp, temp.getId());
         });
     }
 
@@ -192,7 +193,7 @@ public class SeminarService implements ISeminarService{
             c.setIsDeleted(1);
 
             // criteria deleted
-            eventStoreHandler("seminar_criteria", "SEMINAR_CRITERIA_DELETED", seminarCriteriaRepository.save(c));
+            eventStoreHandler("seminar_criteria", "SEMINAR_CRITERIA_DELETED", seminarCriteriaRepository.save(c),idSeminarCriteria);
         });
     }
 
@@ -288,192 +289,84 @@ public class SeminarService implements ISeminarService{
         });
     }
 
-    private Object getRecapitulationByTypeForm(Integer year, Integer prodiId, Integer formType){
+    private List<SeminarValueParticipantDto> getRecapitulationByTypeForm(Integer year, Integer prodiId, Integer formType){
         List<Participant> participants = participantRepository.findAllByYearAndProdi(year, prodiId);
 
-        if(formType != 0){
-            List<SeminarValueParticipantDto> penguji = new ArrayList<>();
+        List<SeminarValueParticipantDto> penguji = new ArrayList<>();
 
-            participants.forEach(p ->{
-                Optional<SeminarForm> sFTemp = seminarFormRepository.findByParticipantAndTypeForm(p.getId(), formType);
-    
-                sFTemp.ifPresent(sftemp -> {
-    
-                    List<SeminarValues> values = seminarValuesRepository.findAllByForm(sftemp.getId());
-    
-                    // proses memasukan identitas peserta
-                    ParticipantDto participantDto = new ParticipantDto();
-                    participantDto.setId(p.getId());
-                    participantDto.setAccount_id(p.getAccountId());
-                    participantDto.setName(p.getName());
-                    participantDto.setProdi_id(p.getProdiId());
-                    participantDto.setStatus_cv(p.getYear());
-                    participantDto.setYear(p.getYear());
-    
-                    Optional<Account> account = accountRepository.findById(p.getAccountId());
-                    account.ifPresent(a -> {
-                        participantDto.setNim(a.getUsername());
-                    });
-    
-                    // proses memasukan nilai
-                    SeminarValueParticipantDto seminarValueParticipantDto = new SeminarValueParticipantDto();
-                    seminarValueParticipantDto.setNilai(values);
-                    seminarValueParticipantDto.setPeserta(participantDto);
-                    seminarValueParticipantDto.setNilaiTotal(seminarValuesRepository.totalSeminarValuesByForm(sftemp.getId()));
-    
-                    penguji.add(seminarValueParticipantDto);
+        participants.forEach(p ->{
+            Optional<SeminarForm> sFTemp = seminarFormRepository.findByParticipantAndTypeForm(p.getId(), formType);
+
+            sFTemp.ifPresent(sftemp -> {
+
+                List<SeminarValues> values = seminarValuesRepository.findAllByForm(sftemp.getId());
+
+                // proses memasukan identitas peserta
+                ParticipantDto participantDto = new ParticipantDto();
+                participantDto.setId(p.getId());
+                participantDto.setAccount_id(p.getAccountId());
+                participantDto.setName(p.getName());
+                participantDto.setProdi_id(p.getProdiId());
+                participantDto.setStatus_cv(p.getYear());
+                participantDto.setYear(p.getYear());
+
+                Optional<Account> account = accountRepository.findById(p.getAccountId());
+                account.ifPresent(a -> {
+                    participantDto.setNim(a.getUsername());
                 });
-            });
-            return penguji;
-        }else{
-            List<SeminarTotalValueDto> nilaiTotal     = new ArrayList<>();
 
-            participants.forEach(p ->{
-                Optional<SeminarForm> form1 = seminarFormRepository.findByParticipantAndTypeForm(p.getId(), 1);
-                Optional<SeminarForm> form2 = seminarFormRepository.findByParticipantAndTypeForm(p.getId(), 2);
-                Optional<SeminarForm> form3 = seminarFormRepository.findByParticipantAndTypeForm(p.getId(), 3);
-    
-                if(form1.isPresent() && form2.isPresent() && form3.isPresent()){
-                    // proses memasukan identitas peserta
-                    ParticipantDto participantDto = new ParticipantDto();
-                    participantDto.setId(p.getId());
-                    participantDto.setAccount_id(p.getAccountId());
-                    participantDto.setName(p.getName());
-                    participantDto.setProdi_id(p.getProdiId());
-                    participantDto.setStatus_cv(p.getYear());
-                    participantDto.setYear(p.getYear());
-    
-                    Optional<Account> account = accountRepository.findById(p.getAccountId());
-                    account.ifPresent(a -> {
-                        participantDto.setNim(a.getUsername());
+                // proses memasukan nilai
+                SeminarValueParticipantDto seminarValueParticipantDto = new SeminarValueParticipantDto();
+                
+                // jika menggunakan tahun sekarang
+                if(year == LocalDateTime.now().getYear()){
+                    seminarValueParticipantDto.setNilaiTotal(seminarValuesRepository.totalSeminarValuesByForm(sftemp.getId()));
+                }else{
+                    seminarValueParticipantDto.setNilaiTotal(Float.valueOf(0));
+                    values.forEach(v -> {
+                        String eventType = "SEMINAR_CRITERIA_UPDATE";
+                        EventStore eventStoreCriteria = eventStoreRepository.getLastUpdateEvent(v.getSeminarCriteriaId(), eventType, year);
+                        try {
+                            JsonNode rootNode = objectMapper.readTree(eventStoreCriteria.getEventData());
+                            seminarValueParticipantDto.setNilaiTotal(
+                                seminarValueParticipantDto.getNilaiTotal()+(v.getValue()/100*rootNode.get("criteriaBobot").asInt())
+                            );
+                        } catch (Exception e) {
+                            e.printStackTrace();;
+                        }
                     });
-    
-                    SeminarTotalValueDto seminarTotalValueDto = new SeminarTotalValueDto();
-                    seminarTotalValueDto.setParticipant(participantDto);
-                    // mengambil rata rata dari setiap form penilaian seminar
-                    seminarTotalValueDto.setNilaiTotal(
-                        (
-                            seminarValuesRepository.totalSeminarValuesByForm(form1.get().getId()) + 
-                            seminarValuesRepository.totalSeminarValuesByForm(form2.get().getId()) +
-                            seminarValuesRepository.totalSeminarValuesByForm(form3.get().getId())
-                        )/3
-                    );
-                    nilaiTotal.add(seminarTotalValueDto);
                 }
+                seminarValueParticipantDto.setNilai(values);
+                seminarValueParticipantDto.setPeserta(participantDto);
+
+                penguji.add(seminarValueParticipantDto);
             });
-            return nilaiTotal;
-        }
+        });
+        return penguji;
     }
 
-    @Override
-    public RecapitulationResponseDto getRecapitulation(Integer prodiId, Integer year) {
+    private Float getTotalValueByForm(Integer formId,Integer year){
+        List<SeminarValues> values = seminarValuesRepository.findAllByForm(formId);
+        final Float[] total = {0f};
+        values.forEach(v -> {
+            String eventType = "SEMINAR_CRITERIA_UPDATE";
+            EventStore eventStoreCriteria = eventStoreRepository.getLastUpdateEvent(v.getSeminarCriteriaId(), eventType, year);
+            try {
+                JsonNode rootNode = objectMapper.readTree(eventStoreCriteria.getEventData());
+                total[0] = total[0] + (v.getValue()/100*rootNode.get("criteriaBobot").asInt());
+            } catch (Exception e) {
+                e.printStackTrace();;
+            }
+        });
+        return total[0];
+    }
 
-        RecapitulationResponseDto response = new RecapitulationResponseDto();
-
-        List<Participant> participants = participantRepository.findAllByYearAndProdi(year, prodiId);
+    private List<SeminarTotalValueDto> getRecapitulationTotal(Integer year, Integer prodiId){
         
-        List<SeminarValueParticipantDto> penguji1 = new ArrayList<>();
-        List<SeminarValueParticipantDto> penguji2 = new ArrayList<>();
-        List<SeminarValueParticipantDto> penguji3 = new ArrayList<>();
+        List<Participant> participants = participantRepository.findAllByYearAndProdi(year, prodiId);
+
         List<SeminarTotalValueDto> nilaiTotal     = new ArrayList<>();
 
-        // penguji 1
-        participants.forEach(p ->{
-            Optional<SeminarForm> sFTemp = seminarFormRepository.findByParticipantAndTypeForm(p.getId(), 1);
-
-            sFTemp.ifPresent(sftemp -> {
-
-                List<SeminarValues> values = seminarValuesRepository.findAllByForm(sftemp.getId());
-
-                // proses memasukan identitas peserta
-                ParticipantDto participantDto = new ParticipantDto();
-                participantDto.setId(p.getId());
-                participantDto.setAccount_id(p.getAccountId());
-                participantDto.setName(p.getName());
-                participantDto.setProdi_id(p.getProdiId());
-                participantDto.setStatus_cv(p.getYear());
-                participantDto.setYear(p.getYear());
-
-                Optional<Account> account = accountRepository.findById(p.getAccountId());
-                account.ifPresent(a -> {
-                    participantDto.setNim(a.getUsername());
-                });
-
-                // proses memasukan nilai
-                SeminarValueParticipantDto seminarValueParticipantDto = new SeminarValueParticipantDto();
-                seminarValueParticipantDto.setNilai(values);
-                seminarValueParticipantDto.setPeserta(participantDto);
-                seminarValueParticipantDto.setNilaiTotal(seminarValuesRepository.totalSeminarValuesByForm(sftemp.getId()));
-
-                penguji1.add(seminarValueParticipantDto);
-            });
-        });
-
-        // penguji 2
-        participants.forEach(p ->{
-            Optional<SeminarForm> sFTemp = seminarFormRepository.findByParticipantAndTypeForm(p.getId(), 2);
-
-            sFTemp.ifPresent(sftemp -> {
-
-                List<SeminarValues> values = seminarValuesRepository.findAllByForm(sftemp.getId());
-
-                // proses memasukan identitas peserta
-                ParticipantDto participantDto = new ParticipantDto();
-                participantDto.setId(p.getId());
-                participantDto.setAccount_id(p.getAccountId());
-                participantDto.setName(p.getName());
-                participantDto.setProdi_id(p.getProdiId());
-                participantDto.setStatus_cv(p.getYear());
-                participantDto.setYear(p.getYear());
-
-                Optional<Account> account = accountRepository.findById(p.getAccountId());
-                account.ifPresent(a -> {
-                    participantDto.setNim(a.getUsername());
-                });
-
-                // proses memasukan nilai
-                SeminarValueParticipantDto seminarValueParticipantDto = new SeminarValueParticipantDto();
-                seminarValueParticipantDto.setNilai(values);
-                seminarValueParticipantDto.setPeserta(participantDto);
-                seminarValueParticipantDto.setNilaiTotal(seminarValuesRepository.totalSeminarValuesByForm(sftemp.getId()));
-
-                penguji2.add(seminarValueParticipantDto);
-            });
-        });
-
-        // penguji 3
-        participants.forEach(p ->{
-            Optional<SeminarForm> sFTemp = seminarFormRepository.findByParticipantAndTypeForm(p.getId(), 3);
-
-            sFTemp.ifPresent(sftemp -> {
-
-                List<SeminarValues> values = seminarValuesRepository.findAllByForm(sftemp.getId());
-
-                // proses memasukan identitas peserta
-                ParticipantDto participantDto = new ParticipantDto();
-                participantDto.setId(p.getId());
-                participantDto.setAccount_id(p.getAccountId());
-                participantDto.setName(p.getName());
-                participantDto.setProdi_id(p.getProdiId());
-                participantDto.setStatus_cv(p.getYear());
-                participantDto.setYear(p.getYear());
-
-                Optional<Account> account = accountRepository.findById(p.getAccountId());
-                account.ifPresent(a -> {
-                    participantDto.setNim(a.getUsername());
-                });
-
-                // proses memasukan nilai
-                SeminarValueParticipantDto seminarValueParticipantDto = new SeminarValueParticipantDto();
-                seminarValueParticipantDto.setNilai(values);
-                seminarValueParticipantDto.setPeserta(participantDto);
-                seminarValueParticipantDto.setNilaiTotal(seminarValuesRepository.totalSeminarValuesByForm(sftemp.getId()));
-
-                penguji3.add(seminarValueParticipantDto);
-            });
-        });
-
-        // nilai total
         participants.forEach(p ->{
             Optional<SeminarForm> form1 = seminarFormRepository.findByParticipantAndTypeForm(p.getId(), 1);
             Optional<SeminarForm> form2 = seminarFormRepository.findByParticipantAndTypeForm(p.getId(), 2);
@@ -497,21 +390,40 @@ public class SeminarService implements ISeminarService{
                 SeminarTotalValueDto seminarTotalValueDto = new SeminarTotalValueDto();
                 seminarTotalValueDto.setParticipant(participantDto);
                 // mengambil rata rata dari setiap form penilaian seminar
-                seminarTotalValueDto.setNilaiTotal(
-                    (
-                        seminarValuesRepository.totalSeminarValuesByForm(form1.get().getId()) + 
-                        seminarValuesRepository.totalSeminarValuesByForm(form2.get().getId()) +
-                        seminarValuesRepository.totalSeminarValuesByForm(form3.get().getId())
-                    )/3
-                );
+                
+                // jika menggunakan tahun sekarang
+                if(year == LocalDateTime.now().getYear()){
+                    seminarTotalValueDto.setNilaiTotal(
+                        (
+                            seminarValuesRepository.totalSeminarValuesByForm(form1.get().getId()) + 
+                            seminarValuesRepository.totalSeminarValuesByForm(form2.get().getId()) +
+                            seminarValuesRepository.totalSeminarValuesByForm(form3.get().getId())
+                        )/3
+                    );
+                }else{
+                    // harus mendapatkan total 
+                    seminarTotalValueDto.setNilaiTotal(Float.valueOf(0));
+                    seminarTotalValueDto.setNilaiTotal(
+                            (getTotalValueByForm(form1.get().getId(),year) +
+                            getTotalValueByForm(form2.get().getId(),year) +
+                            getTotalValueByForm(form3.get().getId(),year))/3
+                        );
+                }
                 nilaiTotal.add(seminarTotalValueDto);
             }
         });
-        
-        response.setNilai_penguji_1(penguji1);
-        response.setNilai_penguji_2(penguji2);
-        response.setNilai_pembimbing(penguji3);
-        response.setNilai_total_seminar(nilaiTotal);
+        return nilaiTotal;
+    }
+
+    @Override
+    public RecapitulationResponseDto getRecapitulation(Integer prodiId, Integer year) {
+
+        RecapitulationResponseDto response = new RecapitulationResponseDto();
+
+        response.setNilai_penguji_1(getRecapitulationByTypeForm(year,prodiId,1));
+        response.setNilai_penguji_2(getRecapitulationByTypeForm(year,prodiId,2));
+        response.setNilai_pembimbing(getRecapitulationByTypeForm(year,prodiId,3));
+        response.setNilai_total_seminar(getRecapitulationTotal(year,prodiId));
 
         return response;
     }

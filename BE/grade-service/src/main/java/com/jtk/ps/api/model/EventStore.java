@@ -32,4 +32,7 @@ public class EventStore {
     @Column(name = "event_time", nullable = false)
     private LocalDateTime eventTime;
 
+    @Column(name = "event_data_id", nullable = false)
+    private Integer eventDataId;
+
 }
