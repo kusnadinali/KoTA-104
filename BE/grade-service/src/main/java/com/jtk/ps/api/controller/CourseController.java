@@ -1,5 +1,7 @@
 package com.jtk.ps.api.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.jtk.ps.api.dto.ComponentAndCriteriasDto;
+import com.jtk.ps.api.dto.ComponentCourseDto;
 import com.jtk.ps.api.dto.CourseFormRequestDto;
 import com.jtk.ps.api.service.CourseService;
 import com.jtk.ps.api.util.ResponseHandler;
@@ -65,5 +69,22 @@ public class CourseController {
     @GetMapping("/component/course-form/{idForm}")
     public ResponseEntity<Object> getComponentByCourseForm(@PathVariable("idForm") Integer idForm){
         return ResponseHandler.generateResponse("Get All Component By Course Form Id succeed",HttpStatus.OK, courseService.getComponentByCourseForm(idForm));
+    }
+
+    @PutMapping("/component/update")
+    public ResponseEntity<Object> updateComponentCourse(@RequestBody List<ComponentCourseDto> newComponentCourses){
+        courseService.updateComponent(newComponentCourses);
+        return ResponseHandler.generateResponse("Update Component Course Form succeed",HttpStatus.OK);
+    }
+
+    @GetMapping("/component/criteria/form/{idForm}")
+    public ResponseEntity<Object> getCriteriaComponentByCourseFormId(@PathVariable("idForm") Integer idForm){
+        return ResponseHandler.generateResponse("Get All Component By Course Form Id succeed",HttpStatus.OK, courseService.getCriteriaComponentByCourseFormId(idForm));
+    }
+
+    @PutMapping("/component/criteria/update")
+    public ResponseEntity<Object> updateAllCriteriaInComponentCourse(@RequestBody ComponentAndCriteriasDto newCriterias){
+        courseService.updateOrInsertCriteriaComponent(newCriterias);;
+        return ResponseHandler.generateResponse("Update Criteria in Component Course Form succeed",HttpStatus.OK);
     }
 }

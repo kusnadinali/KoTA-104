@@ -3,6 +3,7 @@ package com.jtk.ps.api.service.Interface;
 import java.util.List;
 
 import com.jtk.ps.api.dto.ComponentCourseDto;
+import com.jtk.ps.api.dto.ComponentAndCriteriasDto;
 import com.jtk.ps.api.dto.CourseFormRequestDto;
 import com.jtk.ps.api.dto.CourseFormResponseDto;
 import com.jtk.ps.api.dto.CriteriaEvaluationFormDto;
@@ -27,7 +28,12 @@ public interface ICourseService {
 
     List<CriteriaEvaluationFormDto> getCriteriaByEvaluationForm(String formType,Integer prodiId);
 
-    void updateCriteriaComponent();
+    void updateComponent(List<ComponentCourseDto> componentCourseDtos);
+
+    List<ComponentAndCriteriasDto> getCriteriaComponentByCourseFormId(Integer idForm);
+
+    void updateOrInsertCriteriaComponent(ComponentAndCriteriasDto newCriterias);
+
 
     // void updateComponentCourse(Integer idComponent);
 }
