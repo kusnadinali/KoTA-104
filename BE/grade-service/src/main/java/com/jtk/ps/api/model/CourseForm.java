@@ -27,6 +27,9 @@ public class CourseForm {
     @Column(name = "kode",nullable = false)
     private String kode;
 
+    @Column(name = "name",nullable = false)
+    private String name;
+
     @Column(name = "tahun_ajaran_start")
     private Integer tahunAjaranStart;
 
