@@ -8,6 +8,7 @@ import com.jtk.ps.api.dto.CourseFormRequestDto;
 import com.jtk.ps.api.dto.CourseFormResponseDto;
 import com.jtk.ps.api.dto.CriteriaEvaluationFormDto;
 import com.jtk.ps.api.dto.EvaluationFormResponseDto;
+import com.jtk.ps.api.dto.RecapitulationCourseDto;
 import com.jtk.ps.api.model.CourseForm;
 
 public interface ICourseService {
@@ -33,6 +34,8 @@ public interface ICourseService {
     List<ComponentAndCriteriasDto> getCriteriaComponentByCourseFormId(Integer idForm);
 
     void updateOrInsertCriteriaComponent(ComponentAndCriteriasDto newCriterias);
+
+    List<RecapitulationCourseDto> getAllRecapitulationByYearAndProdiId(Integer year, Integer prodiId);
 
 
     // void updateComponentCourse(Integer idComponent);

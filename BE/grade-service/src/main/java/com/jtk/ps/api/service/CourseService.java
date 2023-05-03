@@ -19,6 +19,7 @@ import com.jtk.ps.api.dto.CourseFormResponseDto;
 import com.jtk.ps.api.dto.CriteriaBodyDto;
 import com.jtk.ps.api.dto.CriteriaEvaluationFormDto;
 import com.jtk.ps.api.dto.EvaluationFormResponseDto;
+import com.jtk.ps.api.dto.RecapitulationCourseDto;
 import com.jtk.ps.api.model.AssessmentAspect;
 import com.jtk.ps.api.model.ComponentCourse;
 import com.jtk.ps.api.model.CourseForm;
@@ -459,6 +460,12 @@ public class CourseService implements ICourseService{
             eventStoreHandler("component_course", "COMPONENT_COURSE_UPDATE", componentCourseRepository.save(c), c.getId());
         });
 	}
+
+    @Override
+    public List<RecapitulationCourseDto> getAllRecapitulationByYearAndProdiId(Integer year, Integer prodiId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
     
     
 }
