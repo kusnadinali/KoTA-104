@@ -30,15 +30,18 @@ public class CriteriaComponentCourse {
     @Column(name = "component_id", nullable = false)
     private Integer componentId;
 
-    @Column(name = "industry_criteria_id", nullable = false)
+    @Column(name = "industry_criteria_id")
     private Integer industryCriteriaId;
 
-    @Column(name = "seminar_criteria_id", nullable = false)
+    @Column(name = "seminar_criteria_id")
     private Integer seminarCriteriaId;
 
-    @Column(name = "self_assessment_criteria_id", nullable = false)
+    @Column(name = "self_assessment_criteria_id")
     private Integer selfAssessmentCriteriaId;
 
-    @Column(name = "supervisor_criteria_id", nullable = false)
+    @Column(name = "supervisor_criteria_id")
     private Integer supervisorCriteriaId;
+
+    @Column(name = "is_deleted", nullable = false)
+    private Integer isDeleted;
 }

@@ -16,8 +16,11 @@ public class RecapitulationCourseDto {
     @JsonProperty("id_course")
     private Integer idCourse;
 
-    @JsonProperty("name__course")
+    @JsonProperty("name_course")
     private String nameCourse;
+
+    @JsonProperty("kode_course")
+    private String kode;
 
     List<RecapitulationParticipantDto> participant_data;
 }

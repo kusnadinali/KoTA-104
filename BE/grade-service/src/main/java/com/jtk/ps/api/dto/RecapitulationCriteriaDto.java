@@ -20,5 +20,8 @@ public class RecapitulationCriteriaDto {
     @JsonProperty("name_aspect")
     private String nameAspect;
 
-    private Integer value;
+    @JsonProperty("bobot")
+    private Integer bobot;
+
+    private Float value;
 }

@@ -84,7 +84,7 @@ public class CourseController {
 
     @PutMapping("/component/criteria/update")
     public ResponseEntity<Object> updateAllCriteriaInComponentCourse(@RequestBody ComponentAndCriteriasDto newCriterias){
-        courseService.updateOrInsertCriteriaComponent(newCriterias);;
+        courseService.updateOrInsertCriteriaComponent(newCriterias);
         return ResponseHandler.generateResponse("Update Criteria in Component Course Form succeed",HttpStatus.OK);
     }
 }

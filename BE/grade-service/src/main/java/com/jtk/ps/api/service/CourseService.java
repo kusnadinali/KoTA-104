@@ -1,6 +1,7 @@
 package com.jtk.ps.api.service;
 
 import java.time.LocalDateTime;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -19,22 +20,31 @@ import com.jtk.ps.api.dto.CourseFormResponseDto;
 import com.jtk.ps.api.dto.CriteriaBodyDto;
 import com.jtk.ps.api.dto.CriteriaEvaluationFormDto;
 import com.jtk.ps.api.dto.EvaluationFormResponseDto;
+import com.jtk.ps.api.dto.RecapitulationComponentDto;
 import com.jtk.ps.api.dto.RecapitulationCourseDto;
+import com.jtk.ps.api.dto.RecapitulationCriteriaDto;
+import com.jtk.ps.api.dto.RecapitulationParticipantDto;
+import com.jtk.ps.api.model.Account;
 import com.jtk.ps.api.model.AssessmentAspect;
 import com.jtk.ps.api.model.ComponentCourse;
 import com.jtk.ps.api.model.CourseForm;
+import com.jtk.ps.api.model.CourseValues;
 import com.jtk.ps.api.model.CriteriaComponentCourse;
 import com.jtk.ps.api.model.EvaluationForm;
 import com.jtk.ps.api.model.EventStore;
+import com.jtk.ps.api.model.Participant;
 import com.jtk.ps.api.model.SelfAssessmentAspect;
 import com.jtk.ps.api.model.SeminarCriteria;
 import com.jtk.ps.api.model.SupervisorGradeAspect;
+import com.jtk.ps.api.repository.AccountRepository;
 import com.jtk.ps.api.repository.AssessmentAspectRepository;
 import com.jtk.ps.api.repository.ComponentCourseRepository;
 import com.jtk.ps.api.repository.CourseFormRepository;
+import com.jtk.ps.api.repository.CourseValuesRepository;
 import com.jtk.ps.api.repository.CriteriaComponentCourseRepository;
 import com.jtk.ps.api.repository.EvaluationFormRepository;
 import com.jtk.ps.api.repository.EventStoreRepository;
+import com.jtk.ps.api.repository.ParticipantRepository;
 import com.jtk.ps.api.repository.SelfAssessmentAspectRepository;
 import com.jtk.ps.api.repository.SeminarCriteriaRepository;
 import com.jtk.ps.api.repository.SupervisorGradeAspectRepository;
@@ -80,6 +90,18 @@ public class CourseService implements ICourseService{
     @Autowired
     @Lazy
     private CriteriaComponentCourseRepository criteriaComponentCourseRepository;
+
+    @Autowired
+    @Lazy
+    private CourseValuesRepository courseValuesRepository;
+
+    @Autowired
+    @Lazy
+    private ParticipantRepository participantRepository;
+
+    @Autowired
+    @Lazy
+    private AccountRepository accountRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -132,7 +154,7 @@ public class CourseService implements ICourseService{
             
             componentCourse.setBobotComponent(0);
             componentCourse.setCourseId(idForm);
-            componentCourse.setIsAverage(0);
+            componentCourse.setIsAverage(1);
             componentCourse.setName(component[i]);
 
             componentCourse = componentCourseRepository.save(componentCourse);
@@ -329,7 +351,6 @@ public class CourseService implements ICourseService{
 
 	@Override
 	public void updateComponent(List<ComponentCourseDto> componentCourseDtos) {
-		// TODO Auto-generated method stub
 		componentCourseDtos.forEach(c -> {
             Optional<ComponentCourse> componentCourse = componentCourseRepository.findById(c.getId());
 
@@ -416,21 +437,37 @@ public class CourseService implements ICourseService{
                 }
             }
             // jika criteria tidak ada pada newCriteria maka akan dihapus
-            if(isExist == 1){
-                criteriaComponentCourseRepository.delete(o);
-                eventStoreHandler("criteria_component_course", "CRITERIA_COMPONENT_COURSE_DELETE",o, o.getId());
+            // menentukan soft delete atau hard delete
+            if(isExist == 0){
+                if(courseValuesRepository.isCriteriaInYearNowUse(o.getId(), Integer.valueOf(Year.now().toString())) == 0){
+                    criteriaComponentCourseRepository.delete(o);
+                    eventStoreHandler("criteria_component_course", "CRITERIA_COMPONENT_COURSE_DELETE",o, o.getId());
+                }else{
+                    // soft delete
+                    if(courseValuesRepository.isCriteriaInBeforeYearUse(o.getId(), Integer.valueOf(Year.now().toString())) > 0){
+                        o.setIsDeleted(1);
+                        eventStoreHandler("criteria_component_course", "CRITERIA_COMPONENT_COURSE_DELETE",criteriaComponentCourseRepository.save(o), o.getId());
+                    }else{ //hard delete
+                        criteriaComponentCourseRepository.delete(o);
+                        eventStoreHandler("criteria_component_course", "CRITERIA_COMPONENT_COURSE_DELETE",o, o.getId());
+                    }
+                    courseValuesRepository.deleteAllInCriteriaIdAndYear(o.getId(), Integer.valueOf(Year.now().toString()));
+                    // menghapus values pada tahun sekarang dan criteria id tersebut
+                    
+                }
             }
         });
-
+        
         // create criteria baru jika masih ada sisah
         newCriterias.getCriteria_data().forEach(n -> {
-            if(doneUpdateOrDelete.contains(n.getId())){
+            if(doneUpdateOrDelete.contains(n.getId()) == false){
                 CriteriaComponentCourse newTemp = new CriteriaComponentCourse();
                 
                 newTemp.setBobotCriteria(n.getBobotCriteria());
                 newTemp.setComponentId(n.getComponentId());
                 newTemp.setNameForm(n.getNameForm());
                 newTemp.setTypeForm(n.getTypeForm());
+                newTemp.setIsDeleted(0);
                 
                 switch(n.getNameForm()){
                     case "Industri":
@@ -463,9 +500,127 @@ public class CourseService implements ICourseService{
 
     @Override
     public List<RecapitulationCourseDto> getAllRecapitulationByYearAndProdiId(Integer year, Integer prodiId) {
-        // TODO Auto-generated method stub
-        return null;
+        // tampilkan untuk tahun sekarang aja dulu
+        // cari mata kuliah dengan tahun dan prodiId 
+        List<CourseForm> courseForms = courseFormRepository.findAllCourseByYearAndProdiId(year, prodiId);
+
+        List<RecapitulationCourseDto> responseCourses = new ArrayList<>();
+
+        courseForms.forEach(f -> {
+            List<RecapitulationParticipantDto> responseParticipantDtos = new ArrayList<>();
+            RecapitulationCourseDto tempCourseDtos = new RecapitulationCourseDto();
+
+            tempCourseDtos.setIdCourse(f.getId());
+            tempCourseDtos.setNameCourse(f.getName());
+            tempCourseDtos.setKode(f.getKode());
+            // sekarang mencari peserta yang ada pada mata kuliah tersebut
+            // mencari peserta pada year dan prodiId
+            List<Participant> participants = participantRepository.findAllByYearAndProdi(year, prodiId);
+
+            participants.forEach(p -> {
+                
+                List<RecapitulationComponentDto> tempRecapitulationComponentDtos = new ArrayList<>();
+                RecapitulationParticipantDto tempParticipantDto = new RecapitulationParticipantDto();
+                List<ComponentCourse> componentCourses = componentCourseRepository.findAllByFormId(f.getId());
+                Float[] totalComponent={(float) 0};
+
+                tempParticipantDto.setIdParticipant(p.getId());
+                tempParticipantDto.setName(p.getName());
+
+                Optional<Account> account = accountRepository.findById(p.getAccountId());
+                account.ifPresent(a -> {
+                    tempParticipantDto.setNim(a.getUsername());
+                });
+
+        // ***************************** Component *****************************
+                componentCourses.forEach(c -> {
+                    
+                    List<RecapitulationCriteriaDto> tCriteriaDtos = new ArrayList<>();
+                    RecapitulationComponentDto tempRecapitulationComponentDto = new RecapitulationComponentDto();
+                    List<Integer> listValuesCriteria = new ArrayList<>();
+
+                    tempRecapitulationComponentDto.setIdComponent(c.getId());
+                    tempRecapitulationComponentDto.setNameComponent(c.getName());
+                    tempRecapitulationComponentDto.setBobotComponent(c.getBobotComponent());
+
+                    List<CriteriaComponentCourse> criteriaComponentCourses = criteriaComponentCourseRepository.findAllByComponentId(c.getId());
+        // ***************************** Criteria and Values *****************************
+                    criteriaComponentCourses.forEach(d -> {
+                        RecapitulationCriteriaDto tempRecapitulationCriteriaDto = new RecapitulationCriteriaDto();
+                        Optional<CourseValues> courseValues = courseValuesRepository.findByCriteriaIdAndParticipantId(d.getId(), p.getId());
+                        
+                        courseValues.ifPresent(cv -> {
+                            tempRecapitulationCriteriaDto.setIdCriteria(cv.getCriteriaId());
+                            tempRecapitulationCriteriaDto.setBobot(d.getBobotCriteria());
+                            tempRecapitulationCriteriaDto.setNameForm(d.getNameForm());
+                            
+                            tempRecapitulationCriteriaDto.setNameAspect(getAspectNameInForm(d.getIndustryCriteriaId(), d.getSeminarCriteriaId(), d.getSupervisorCriteriaId(), d.getSelfAssessmentCriteriaId(), d.getNameForm()));
+
+                            if(d.getBobotCriteria() != 100){
+                                tempRecapitulationCriteriaDto.setValue((float) cv.getValue()*d.getBobotCriteria());
+                                listValuesCriteria.add(cv.getValue()*d.getBobotCriteria());
+                            }else{
+                                tempRecapitulationCriteriaDto.setValue((float) cv.getValue());
+                                listValuesCriteria.add(cv.getValue());
+                            }
+                        });
+                        tCriteriaDtos.add(tempRecapitulationCriteriaDto);
+                    });
+
+                    // setelah melakukan searching criteria
+                    tempRecapitulationComponentDto.setCriteria_data(tCriteriaDtos);
+
+                    // setelah melakukan penjumlahan
+                    if(c.getIsAverage() == 1){
+                        tempRecapitulationComponentDto.setTotal_component(Float.valueOf((float) listValuesCriteria.stream().mapToInt(Integer::intValue).average().orElse(0.0)));
+                    }else{
+                        tempRecapitulationComponentDto.setTotal_component(Float.valueOf((float) listValuesCriteria.stream().mapToInt(Integer::intValue).sum()));
+                    }
+
+                    tempRecapitulationComponentDtos.add(tempRecapitulationComponentDto);
+
+                    // mejumlahkan untuk mendapatkan total nilai MK
+                    totalComponent[0] += tempRecapitulationComponentDto.getTotal_component()*c.getBobotComponent();
+
+                });
+                // setelah menghitung semua kriterianya
+                tempParticipantDto.setTotal_course(totalComponent[0]);
+
+                responseParticipantDtos.add(tempParticipantDto);
+            });
+
+            tempCourseDtos.setParticipant_data(responseParticipantDtos);
+            responseCourses.add(tempCourseDtos);
+        });
+
+        return responseCourses;
     }
     
+    private String getAspectNameInForm(Integer idIndustri, Integer idSeminar, Integer idPembimbing, Integer idSelfAssessment, String formName){
+        String aspectName = "";
+        switch(formName){
+            case "Industri":
+                Optional<AssessmentAspect> aOptional = assessmentAspectRepository.findById(idIndustri);
+                aspectName = aOptional.map(AssessmentAspect::getAspectName).orElse("");
+                break;
+            case "Seminar":
+                Optional<SeminarCriteria> seminarCriteriaOptional = seminarCriteriaRepository.findById(idSeminar);
+                aspectName = seminarCriteriaOptional.map(SeminarCriteria::getCriteriaName).orElse("");
+                break;
+            case "Pembimbing":
+                Optional<SupervisorGradeAspect> supervisorGradeAspectOptional = supervisorGradeAspectRepository.findById(idPembimbing);
+                aspectName = supervisorGradeAspectOptional.map(SupervisorGradeAspect::getDescription).orElse("");
+                break;
+            case "Self Assessment":
+                Optional<SelfAssessmentAspect> selfAssessmentAspectOptional = selfAssessmentAspectRepository.findById(idSelfAssessment);
+                aspectName = selfAssessmentAspectOptional.map(SelfAssessmentAspect::getName).orElse("");
+                break;
+            default:
+                aspectName = "";
+                break;
+        }
+
+        return aspectName;
+    }
     
 }
