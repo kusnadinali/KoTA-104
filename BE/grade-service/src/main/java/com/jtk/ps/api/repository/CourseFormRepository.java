@@ -15,6 +15,6 @@ public interface CourseFormRepository extends JpaRepository<CourseForm,Integer>{
     List<CourseForm> findAllCourse();
 
     @Query(value = "select * from course_form where is_deleted = 0 and tahun_ajaran_start = :year and prodi_id = :prodiId",nativeQuery = true)
-    List<CourseForm> findAllCourseByYearAndProdiId(Integer Year, Integer prodiId);
+    List<CourseForm> findAllCourseByYearAndProdiId(Integer year, Integer prodiId);
 
 }

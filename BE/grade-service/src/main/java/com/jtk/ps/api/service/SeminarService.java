@@ -140,6 +140,7 @@ public class SeminarService implements ISeminarService{
         newSeminarForm.setDateSeminar(seminarFormRequestDto.getDateSeminar());
         newSeminarForm.setExaminerId(seminarFormRequestDto.getExaminerId());
         newSeminarForm.setParticipantId(seminarFormRequestDto.getParticipantId());
+        newSeminarForm.setExaminerType(seminarFormRequestDto.getExaminerType());
 
         newSeminarForm = seminarFormRepository.save(newSeminarForm);
 

@@ -32,57 +32,57 @@ public class SeminarController {
     @Autowired
     private SeminarService seminarService;
 
-    @GetMapping("/company")
+    @GetMapping("/company") // checked
     public ResponseEntity<Object> getAllCompany(){
         return ResponseHandler.generateResponse("Get all company succeed",HttpStatus.OK, seminarService.getAllCompany());
     }
 
-    @GetMapping("/company/{idCompany}")
+    @GetMapping("/company/{idCompany}") // checked
     public ResponseEntity<Object> getParticipantByCompany(@PathVariable("idCompany") Integer idCompany){
         return ResponseHandler.generateResponse("Get all participant by company",HttpStatus.OK,seminarService.getAllParticipantByCompany(idCompany));
     }
 
-    @PostMapping("/form")
+    @PostMapping("/form") // checked
     public ResponseEntity<Object> createSeminarForm(@RequestBody SeminarFormRequestDto newSeminar){
         seminarService.createSeminarForm(newSeminar);
         return ResponseHandler.generateResponse("Create Seminar Form succeed",HttpStatus.OK);
     }
 
-    @GetMapping("/criteria")
+    @GetMapping("/criteria") // checked
     public ResponseEntity<Object> getAllSeminarCriteria(){
         return ResponseHandler.generateResponse("Get All Seminar Criteria succeed",HttpStatus.OK,seminarService.getAllSeminarCriteria());
     }
 
-    @PostMapping("/criteria")
+    @PostMapping("/criteria") // checked
     public ResponseEntity<Object> createSeminarCriteria(@RequestBody SeminarCriteriaRequestDto newCriteria){
         seminarService.createSeminarCriteria(newCriteria);
         return ResponseHandler.generateResponse("Create Criteria Seminar Form succeed",HttpStatus.OK);
     }
 
-    @PutMapping("/criteria/update/{id_criteria}")
+    @PutMapping("/criteria/update/{id_criteria}") // checked
     public ResponseEntity<Object> updateSeminarCriteria(@PathVariable("id_criteria") Integer idCriteria,@RequestBody SeminarCriteriaRequestDto newCriteria){
         seminarService.updateSeminarCriteria(idCriteria, newCriteria);
         return ResponseHandler.generateResponse("Update Criteria Seminar Form succeed",HttpStatus.OK);
     }
 
-    @DeleteMapping("/criteria/delete/{id_criteria}")
+    @DeleteMapping("/criteria/delete/{id_criteria}") // checked
     public ResponseEntity<Object> deleteSeminarCriteria(@PathVariable("id_criteria") Integer idCriteria){
         seminarService.deleteSeminarCriteria(idCriteria);
         return ResponseHandler.generateResponse("Deleted Criteria Seminar Form succeed",HttpStatus.OK);
     }
 
-    @GetMapping("/form/participant/{id}")
+    @GetMapping("/form/participant/{id}")  // checked
     public ResponseEntity<Object> findAllSeminarFormByParticipantId(@PathVariable("id") Integer id){
         return ResponseHandler.generateResponse("Get All Seminar Form By Participant Id Succeed",HttpStatus.OK,seminarService.findSeminarFormByParticipantId(id));
     }
 
-    @PutMapping("/form/{id_form}")
+    @PutMapping("/form/{id_form}") // checked (update n insert)
     public ResponseEntity<Object> updateSeminarForm(@PathVariable("id_form") Integer id_form, @RequestBody List<SeminarValuesDto> seminarvalues){
         seminarService.updateSeminarValues(id_form, seminarvalues);
         return ResponseHandler.generateResponse("Update Seminar Form succeed",HttpStatus.OK);
     }
 
-    @GetMapping("/recapitulation")
+    @GetMapping("/recapitulation") // checked
     public ResponseEntity<Object> recapitulationSeminarValues(@RequestParam("year") Integer year, @RequestParam("prodiId") Integer prodiId){
         return ResponseHandler.generateResponse("Get All Seminar Form By Participant Id Succeed",HttpStatus.OK,seminarService.getRecapitulation(prodiId, year));
     }

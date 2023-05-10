@@ -22,6 +22,9 @@ public class SeminarFormRequestDto {
     @JsonProperty("examiner_id")
     private Integer examinerId;
 
+    @JsonProperty("examiner_type")
+    private Integer examinerType;
+
     @JsonProperty("comment")
     private String comment;
 }
