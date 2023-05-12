@@ -223,7 +223,6 @@ public class SeminarService implements ISeminarService{
         List<SeminarFormResponseDto> response = new ArrayList<>();
 
         if(isExist == 1){
-            LOGGER.info("*****  Ada");
             List<SeminarForm> seminarForms = seminarFormRepository.findAllByParticipantId(idParticipant);
             seminarForms.forEach(s -> {
                 SeminarFormResponseDto temp = new SeminarFormResponseDto();
@@ -238,7 +237,6 @@ public class SeminarService implements ISeminarService{
                 response.add(temp);
             });
         }else{
-            LOGGER.info("*****  Tidak Ada");
             for(int i = 0; i<3; i++){
                 SeminarForm seminarForm = new SeminarForm();
                 SeminarFormResponseDto temp = new SeminarFormResponseDto();

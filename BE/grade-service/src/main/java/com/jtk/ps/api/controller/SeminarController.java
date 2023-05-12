@@ -42,11 +42,11 @@ public class SeminarController {
         return ResponseHandler.generateResponse("Get all participant by company",HttpStatus.OK,seminarService.getAllParticipantByCompany(idCompany));
     }
 
-    @PostMapping("/form") // checked
-    public ResponseEntity<Object> createSeminarForm(@RequestBody SeminarFormRequestDto newSeminar){
-        seminarService.createSeminarForm(newSeminar);
-        return ResponseHandler.generateResponse("Create Seminar Form succeed",HttpStatus.OK);
-    }
+    // @PostMapping("/form") // checked
+    // public ResponseEntity<Object> createSeminarForm(@RequestBody SeminarFormRequestDto newSeminar){
+    //     seminarService.createSeminarForm(newSeminar);
+    //     return ResponseHandler.generateResponse("Create Seminar Form succeed",HttpStatus.OK);
+    // }
 
     @GetMapping("/criteria") // checked
     public ResponseEntity<Object> getAllSeminarCriteria(){
@@ -76,9 +76,15 @@ public class SeminarController {
         return ResponseHandler.generateResponse("Get All Seminar Form By Participant Id Succeed",HttpStatus.OK,seminarService.findSeminarFormByParticipantId(id));
     }
 
-    @PutMapping("/form/{id_form}") // checked (update n insert)
-    public ResponseEntity<Object> updateSeminarForm(@PathVariable("id_form") Integer id_form, @RequestBody List<SeminarValuesDto> seminarvalues){
+    @PutMapping("/form/{id_form}/values") // checked (update n insert)
+    public ResponseEntity<Object> updateValueSeminarByFormId(@PathVariable("id_form") Integer id_form, @RequestBody List<SeminarValuesDto> seminarvalues){
         seminarService.updateSeminarValues(id_form, seminarvalues);
+        return ResponseHandler.generateResponse("Update Seminar Values succeed",HttpStatus.OK);
+    }
+
+    @PutMapping("/form/{id_form}") // checked (update n insert)
+    public ResponseEntity<Object> updateSeminarForm(@PathVariable("id_form") Integer id_form, @RequestBody SeminarFormRequestDto seminarForm){
+        seminarService.updateSeminarForm(id_form, seminarForm);;
         return ResponseHandler.generateResponse("Update Seminar Form succeed",HttpStatus.OK);
     }
 
