@@ -3,6 +3,7 @@ package com.jtk.ps.api.service.Interface;
 import java.util.List;
 
 import com.jtk.ps.api.dto.CompanyNameDto;
+import com.jtk.ps.api.dto.ExaminerSeminarDto;
 import com.jtk.ps.api.dto.ParticipantDto;
 import com.jtk.ps.api.dto.RecapitulationResponseDto;
 import com.jtk.ps.api.dto.SeminarCriteriaDto;
@@ -40,7 +41,7 @@ public interface ISeminarService {
 
     // public void getSeminarFormBySeminarFormIdAndExaminerId(Integer formId, Integer examinerId);
 
-    // public void getSeminarFormByExaminerId();
+    public ExaminerSeminarDto getExaminer();
 
 
 

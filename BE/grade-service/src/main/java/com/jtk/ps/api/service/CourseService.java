@@ -143,7 +143,7 @@ public class CourseService implements ICourseService{
 
             eventStore.setEntityId(entityId);
             eventStore.setEventType(eventType);
-            eventStore.setEventTime(LocalDateTime.now().plusYears(1));
+            eventStore.setEventTime(LocalDateTime.now());
             eventStore.setEventData(objectMapper.writeValueAsString(object));
             eventStore.setEventDataId(eventDataId);
 
@@ -477,18 +477,18 @@ public class CourseService implements ICourseService{
             // jika criteria tidak ada pada newCriteria maka akan dihapus
             // menentukan soft delete atau hard delete
             if(isExist == 0){
-                LOGGER.info(String.format("year now ==> %d", Integer.valueOf(Year.now().plusYears(1).toString())));
-                LOGGER.info(String.format("nilai dari is criteria %d", courseValuesRepository.isCriteriaInYearNowUse(o.getId(), Integer.valueOf(Year.now().plusYears(1).toString()))));
+                LOGGER.info(String.format("year now ==> %d", Integer.valueOf(Year.now().toString())));
+                LOGGER.info(String.format("nilai dari is criteria %d", courseValuesRepository.isCriteriaInYearNowUse(o.getId(), Integer.valueOf(Year.now().toString()))));
 
                 // soft delete
-                if(courseValuesRepository.isCriteriaInBeforeYearUse(o.getId(), Integer.valueOf(Year.now().plusYears(1).toString())) > 0){
+                if(courseValuesRepository.isCriteriaInBeforeYearUse(o.getId(), Integer.valueOf(Year.now().toString())) > 0){
                     o.setIsDeleted(1);
                     // menghapus values pada tahun sekarang dan criteria id tersebut
-                    courseValuesRepository.deleteAllInCriteriaIdAndYear(o.getId(), Integer.valueOf(Year.now().plusYears(1).toString()));
+                    courseValuesRepository.deleteAllInCriteriaIdAndYear(o.getId(), Integer.valueOf(Year.now().toString()));
                     eventStoreHandler("criteria_component_course", "CRITERIA_COMPONENT_COURSE_UPDATE",criteriaComponentCourseRepository.save(o), o.getId());
                 }else{ //hard delete
                     
-                    courseValuesRepository.deleteAllInCriteriaIdAndYear(o.getId(), Integer.valueOf(Year.now().plusYears(1).toString()));
+                    courseValuesRepository.deleteAllInCriteriaIdAndYear(o.getId(), Integer.valueOf(Year.now().toString()));
                     
                     criteriaComponentCourseRepository.delete(o);
 
@@ -541,7 +541,7 @@ public class CourseService implements ICourseService{
     public List<RecapitulationCourseDto> getAllRecapitulationByYearAndProdiId(Integer year, Integer prodiId) {
         // tampilkan untuk tahun sekarang aja dulu
         // cari mata kuliah dengan tahun dan prodiId 
-        final Integer yearNow = Integer.parseInt(Year.now().plusYears(1).toString());
+        final Integer yearNow = Integer.parseInt(Year.now().toString());
         List<CourseForm> courseForms = new ArrayList<>();
         if(year == yearNow){
             courseForms = courseFormRepository.findAllCourseByYearAndProdiId(year, prodiId);
@@ -616,7 +616,7 @@ public class CourseService implements ICourseService{
     private List<RecapitulationComponentDto> getListComponentRecapitulation(Integer year, Integer prodiId,CourseForm form,Participant participant){
         
         List<RecapitulationComponentDto> tempRecapitulationComponentDtos = new ArrayList<>();
-        Integer yearNow = Integer.parseInt(Year.now().plusYears(1).toString());
+        Integer yearNow = Integer.parseInt(Year.now().toString());
         List<ComponentCourse> componentCourses = componentCourseRepository.findAllByFormId(form.getId());
 
         componentCourses.forEach(c -> {
@@ -677,7 +677,7 @@ public class CourseService implements ICourseService{
     private List<RecapitulationCriteriaDto> getListCriteriaRecapitulation(Integer year, Integer prodiId, ComponentCourse component, Participant participant){
 
         List<RecapitulationCriteriaDto> tCriteriaDtos = new ArrayList<>();
-        Integer yearNow = Integer.parseInt(Year.now().plusYears(1).toString());
+        Integer yearNow = Integer.parseInt(Year.now().toString());
 
         List<CriteriaComponentCourse> criteriaComponentCourses = new ArrayList<>();
         if(year == yearNow){
@@ -736,7 +736,7 @@ public class CourseService implements ICourseService{
                         value = (float) vIndustri.get().getValue();
                         newValues.setCriteriaId(criteria.getId());
                         newValues.setIndustryValuesId(vIndustri.get().getId());
-                        newValues.setCreated_date(LocalDate.now().plusYears(1));
+                        newValues.setCreated_date(LocalDate.now());
                         newValues.setParticipantId(pId);
                         newValues.setValue(value);
 
@@ -757,7 +757,7 @@ public class CourseService implements ICourseService{
 
                         seminarValuesId = seminarValuesId.substring(1,seminarValuesId.length());
 
-                        newValues.setCreated_date(LocalDate.now().plusYears(1));
+                        newValues.setCreated_date(LocalDate.now());
                         newValues.setCriteriaId(criteria.getId());
                         newValues.setSeminarValuesId(seminarValuesId);
                         newValues.setParticipantId(pId);
@@ -781,7 +781,7 @@ public class CourseService implements ICourseService{
 
                         supervisorValuesId = supervisorValuesId.substring(1,supervisorValuesId.length());
 
-                        newValues.setCreated_date(LocalDate.now().plusYears(1));
+                        newValues.setCreated_date(LocalDate.now());
                         newValues.setCriteriaId(criteria.getId());
                         newValues.setMentorValuesId(supervisorValuesId);
                         newValues.setParticipantId(pId);
@@ -802,7 +802,7 @@ public class CourseService implements ICourseService{
 
                         assessmentValuesId = assessmentValuesId.substring(1,assessmentValuesId.length());
 
-                        newValues.setCreated_date(LocalDate.now().plusYears(1));
+                        newValues.setCreated_date(LocalDate.now());
                         newValues.setCriteriaId(criteria.getId());
                         newValues.setSelfAssessmentValuesId(assessmentValuesId);
                         newValues.setValue(value);

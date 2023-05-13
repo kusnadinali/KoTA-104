@@ -87,6 +87,11 @@ public class SeminarController {
         return ResponseHandler.generateResponse("Get All Seminar Form By Participant Id Succeed",HttpStatus.OK,seminarService.getRecapitulation(prodiId, year));
     }
 
+    @GetMapping("/examiner") // checked
+    public ResponseEntity<Object> getExaminerSeminar(){
+        return ResponseHandler.generateResponse("Get All Examiner Succeed",HttpStatus.OK,seminarService.getExaminer());
+    }
+
     // @PutMapping("/values/{id_form}")
     // public ResponseEntity<Object> updateValueSeminarByFormId(@PathVariable("id_form") Integer idForm,@RequestBody List<SeminarValuesDto> newValue){
         
