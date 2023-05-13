@@ -25,6 +25,6 @@ public interface CourseValuesRepository extends JpaRepository<CourseValues,Integ
     @Query(value = "delete from course_values where criteria_id = :criteriaId and year(created_date) = :year",nativeQuery = true)
     void deleteAllInCriteriaIdAndYear(Integer criteriaId,Integer year);
 
-    @Query(value = "select * from couse_values cv where criteria_id = :criteriaId and participant_id = :participantId",nativeQuery = true)
+    @Query(value = "select * from course_values cv where criteria_id = :criteriaId and participant_id = :participantId",nativeQuery = true)
     Optional<CourseValues> findByCriteriaIdAndParticipantId(Integer criteriaId, Integer participantId);
 }

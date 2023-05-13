@@ -28,63 +28,68 @@ public class CourseController {
     @Autowired
     private CourseService courseService;
     
-    @GetMapping("/form")
+    @GetMapping("/form") //checked
     public ResponseEntity<Object> getAllCourseForm(){
         return ResponseHandler.generateResponse("Get all Course Form succeed",HttpStatus.OK, courseService.getAllCourse());
     }
 
-    @PostMapping("/form")
+    @PostMapping("/form") //checked
     public ResponseEntity<Object> createCourseForm(@RequestBody CourseFormRequestDto newCourse){
         courseService.createCourseForm(newCourse);
         return ResponseHandler.generateResponse("Create Course Form succeed",HttpStatus.OK);
     }
 
-    @GetMapping("/form/{idForm}")
+    @GetMapping("/form/{idForm}") // checked
     public ResponseEntity<Object> getDetailCourse(@PathVariable("idForm") Integer idForm){
         return ResponseHandler.generateResponse("Get Detail Course succeed",HttpStatus.OK, courseService.getDetailCourse(idForm));
     }
 
-    @PutMapping("/form/update/{idForm}")
+    @PutMapping("/form/update/{idForm}") //checked
     public ResponseEntity<Object> updateCourseForm(@PathVariable("idForm") Integer idForm,@RequestBody CourseFormRequestDto newCourseForm){
         courseService.updateCourseForm(idForm, newCourseForm);
         return ResponseHandler.generateResponse("Update Course Form succeed",HttpStatus.OK);
     }
 
-    @DeleteMapping("/form/delete/{idForm}")
+    @DeleteMapping("/form/delete/{idForm}") //checked
     public ResponseEntity<Object> deleteCourseForm(@PathVariable("idForm") Integer idForm){
         courseService.deleteCourseForm(idForm);
         return ResponseHandler.generateResponse("Deleted Course Form succeed",HttpStatus.OK);
     }
 
-    @GetMapping("/criteria/evaluation-form/{prodiId}")
+    @GetMapping("/criteria/evaluation-form/{prodiId}")//checked
     public ResponseEntity<Object> getEvaluationFormByProdiId(@PathVariable("prodiId") Integer prodiId){
         return ResponseHandler.generateResponse("Get Evaluation Forms succeed",HttpStatus.OK, courseService.getEvaluationForm(prodiId));
     }
 
-    @GetMapping("/criteria/evaluation-form/aspect")
+    @GetMapping("/criteria/evaluation-form/aspect") // checked
     public ResponseEntity<Object> getAspectEvaluationForm(@RequestParam("formType") String formType,@RequestParam("prodiId") Integer prodiId){
         return ResponseHandler.generateResponse("Get Aspects Evaluation succeed",HttpStatus.OK, courseService.getCriteriaByEvaluationForm(formType,prodiId));
     }
 
-    @GetMapping("/component/course-form/{idForm}")
+    @GetMapping("/component/course-form/{idForm}") // checked
     public ResponseEntity<Object> getComponentByCourseForm(@PathVariable("idForm") Integer idForm){
         return ResponseHandler.generateResponse("Get All Component By Course Form Id succeed",HttpStatus.OK, courseService.getComponentByCourseForm(idForm));
     }
 
-    @PutMapping("/component/update")
+    @PutMapping("/component/update") // checked
     public ResponseEntity<Object> updateComponentCourse(@RequestBody List<ComponentCourseDto> newComponentCourses){
         courseService.updateComponent(newComponentCourses);
         return ResponseHandler.generateResponse("Update Component Course Form succeed",HttpStatus.OK);
     }
 
-    @GetMapping("/component/criteria/form/{idForm}")
+    @GetMapping("/component/criteria/form/{idForm}") //checked
     public ResponseEntity<Object> getCriteriaComponentByCourseFormId(@PathVariable("idForm") Integer idForm){
         return ResponseHandler.generateResponse("Get All Component By Course Form Id succeed",HttpStatus.OK, courseService.getCriteriaComponentByCourseFormId(idForm));
     }
 
-    @PutMapping("/component/criteria/update")
+    @PutMapping("/component/criteria/update") //checked
     public ResponseEntity<Object> updateAllCriteriaInComponentCourse(@RequestBody ComponentAndCriteriasDto newCriterias){
         courseService.updateOrInsertCriteriaComponent(newCriterias);
         return ResponseHandler.generateResponse("Update Criteria in Component Course Form succeed",HttpStatus.OK);
+    }
+
+    @GetMapping("/recapitulation") 
+    public ResponseEntity<Object> getRecapitulationCourseByYearAndProdi(@RequestParam("year") Integer year, @RequestParam("prodiId") Integer prodiId){
+        return ResponseHandler.generateResponse("Get Recapitulation By Year And ProdiId succeed",HttpStatus.OK, courseService.getAllRecapitulationByYearAndProdiId(year, prodiId));
     }
 }

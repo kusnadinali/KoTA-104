@@ -12,8 +12,8 @@ import com.jtk.ps.api.model.Participant;
 @Repository
 public interface ParticipantRepository extends JpaRepository<Participant, Integer>{
     
-    @Query(value = "SELECT *  FROM participant a JOIN final_mapping b on a.id = b.participant_id  join company c on b.company_id = c.id where c.id = :idCompany and b.`year` = year(now())",nativeQuery = true)
-    List<Participant> findParticipantByCompany(@Param("idCompany") Integer idCompany);
+    @Query(value = "SELECT *  FROM participant a JOIN final_mapping b on a.id = b.participant_id  join company c on b.company_id = c.id where c.id = :idCompany and b.`year` = :year",nativeQuery = true)
+    List<Participant> findParticipantByCompany(@Param("idCompany") Integer idCompany, Integer year);
 
     @Query(value = "select p.* from participant p join account a on a.id = p.account_id where p.year = :year and p.prodi_id = :prodiId order by a.username", nativeQuery = true)
     List<Participant> findAllByYearAndProdi(@Param("year") Integer year, @Param("prodiId") Integer prodiId);

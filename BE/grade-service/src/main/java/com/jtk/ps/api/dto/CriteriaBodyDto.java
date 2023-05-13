@@ -27,4 +27,7 @@ public class CriteriaBodyDto {
 
     @JsonProperty("aspect_form_id")
     private Integer aspectFormId;
+
+    @JsonProperty("aspect_name")
+    private String aspectName;
 }

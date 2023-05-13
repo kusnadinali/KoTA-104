@@ -1,6 +1,7 @@
 package com.jtk.ps.api.service;
 
 import java.time.LocalDateTime;
+import java.time.Year;
 import java.util.*;
 
 import org.slf4j.Logger;
@@ -81,7 +82,7 @@ public class SeminarService implements ISeminarService{
 
             eventStore.setEntityId(entityId);
             eventStore.setEventType(eventType);
-            eventStore.setEventTime(LocalDateTime.now());
+            eventStore.setEventTime(LocalDateTime.now().plusYears(1));
             eventStore.setEventData(objectMapper.writeValueAsString(object));
             eventStore.setEventDataId(eventDataId);
 
@@ -109,7 +110,7 @@ public class SeminarService implements ISeminarService{
     @Override
     public List<ParticipantDto> getAllParticipantByCompany(Integer idCompany) {
         // LOGGER.info(String.format("Year now %s", "2023");
-        List<Participant> participants = participantRepository.findParticipantByCompany(idCompany);
+        List<Participant> participants = participantRepository.findParticipantByCompany(idCompany,Integer.parseInt(Year.now().plusYears(1).toString()));
         List<ParticipantDto> participantDtos = new ArrayList<>();
         participants.forEach(c -> {
             ParticipantDto tempParticipantDto = new ParticipantDto();
@@ -194,7 +195,7 @@ public class SeminarService implements ISeminarService{
             c.setIsDeleted(1);
 
             // criteria deleted
-            eventStoreHandler("seminar_criteria", "SEMINAR_CRITERIA_DELETED", seminarCriteriaRepository.save(c),idSeminarCriteria);
+            eventStoreHandler("seminar_criteria", "SEMINAR_CRITERIA_UPDATE", seminarCriteriaRepository.save(c),idSeminarCriteria);
         });
     }
 
@@ -318,7 +319,7 @@ public class SeminarService implements ISeminarService{
                 SeminarValueParticipantDto seminarValueParticipantDto = new SeminarValueParticipantDto();
                 
                 // jika menggunakan tahun sekarang
-                if(year == LocalDateTime.now().getYear()){
+                if(year == LocalDateTime.now().plusYears(1).getYear()){
                     seminarValueParticipantDto.setNilaiTotal(seminarValuesRepository.totalSeminarValuesByForm(sftemp.getId()));
                 }else{
                     seminarValueParticipantDto.setNilaiTotal(Float.valueOf(0));
@@ -391,7 +392,7 @@ public class SeminarService implements ISeminarService{
                 // mengambil rata rata dari setiap form penilaian seminar
                 
                 // jika menggunakan tahun sekarang
-                if(year == LocalDateTime.now().getYear()){
+                if(year == LocalDateTime.now().plusYears(1).getYear()){
                     seminarTotalValueDto.setNilaiTotal(
                         (
                             seminarValuesRepository.totalSeminarValuesByForm(form1.get().getId()) + 

@@ -26,4 +26,10 @@ public interface SeminarValuesRepository extends JpaRepository<SeminarValues,Int
 
     @Query(value = "SELECT coalesce(SUM(sv.value / 100 * sc.criteria_bobot),0) AS total_nilai FROM seminar_values sv JOIN seminar_criteria sc ON sc.id = sv.seminar_criteria_id WHERE  sv.seminar_form_id = :idForm", nativeQuery = true)
     Float totalSeminarValuesByForm(@Param("idForm") Integer idForm);
+
+    @Query(value = "select coalesce(sum(a.value)/count(*),0) as value from seminar_values a join seminar_form b on b.id = a.seminar_form_id where a.seminar_criteria_id = :criteriaId and b.participant_id = :participantId",nativeQuery = true)
+    Float findValuesByCriteriaIdAndParticipantId(Integer criteriaId, Integer participantId);
+
+    @Query(value = "select a.* from seminar_values a join seminar_form b on b.id = a.seminar_form_id where a.seminar_criteria_id = :criteriaId and b.participant_id = :participantId", nativeQuery = true)
+    List<SeminarValues> findAllValuesCriteriaByParticipant(Integer criteriaId, Integer participantId);
 }

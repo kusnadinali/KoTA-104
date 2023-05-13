@@ -1,6 +1,6 @@
 package com.jtk.ps.api.model;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 import javax.persistence.*;
 
@@ -19,19 +19,27 @@ public class CourseValues {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private Integer value;
+    @Column(name = "value")
+    private Float value;
 
+    @Column(name = "criteria_id")
     private Integer criteriaId;
 
-    private Integer mentorValuesId;
+    @Column(name = "mentor_values_id")
+    private String mentorValuesId;
 
-    private Integer selfAssessmentValuesId;
+    @Column(name = "self_assessment_values_id")
+    private String selfAssessmentValuesId;
 
-    private Integer seminarValuesId;
+    @Column(name = "seminar_values_id")
+    private String seminarValuesId;
 
+    @Column(name = "industry_values_id")
     private Integer industryValuesId;
 
+    @Column(name = "participant_id")
     private Integer participantId;
 
-    private Date created_date;
+    @Column(name = "created_date")
+    private LocalDate created_date;
 }

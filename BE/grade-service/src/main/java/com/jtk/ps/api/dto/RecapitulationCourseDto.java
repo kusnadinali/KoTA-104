@@ -22,5 +22,6 @@ public class RecapitulationCourseDto {
     @JsonProperty("kode_course")
     private String kode;
 
+    @JsonProperty("participant_data")
     List<RecapitulationParticipantDto> participant_data;
 }

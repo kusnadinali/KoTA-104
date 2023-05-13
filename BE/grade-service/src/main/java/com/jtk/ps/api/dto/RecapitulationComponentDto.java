@@ -22,8 +22,9 @@ public class RecapitulationComponentDto {
     @JsonProperty("bobot_component")
     private Integer bobotComponent;
 
-    private Float total_component;
-
+    @JsonProperty("criteria_data")
     private List<RecapitulationCriteriaDto> criteria_data;
     
+    @JsonProperty("total_value_component")
+    private Float totalValueComponent;
 }

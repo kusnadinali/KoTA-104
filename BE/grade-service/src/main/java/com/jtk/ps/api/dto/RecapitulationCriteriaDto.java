@@ -17,11 +17,15 @@ public class RecapitulationCriteriaDto {
     @JsonProperty("name_form")
     private String nameForm;
 
+    @JsonProperty("form_type")
+    private String formType;
+
     @JsonProperty("name_aspect")
     private String nameAspect;
 
     @JsonProperty("bobot")
     private Integer bobot;
 
+    @JsonProperty("value")
     private Float value;
 }
