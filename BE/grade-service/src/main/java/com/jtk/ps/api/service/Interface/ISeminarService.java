@@ -30,7 +30,7 @@ public interface ISeminarService {
     
     void deleteSeminarCriteria(Integer idSeminarCriteria);
 
-    List<SeminarFormResponseDto> findSeminarFormByParticipantId(Integer idParticipant);
+    SeminarFormResponseDto findSeminarFormByParticipantId(Integer idParticipant);
     
     void updateSeminarForm(Integer idForm, SeminarFormRequestDto seminarFormRequestDto);
 

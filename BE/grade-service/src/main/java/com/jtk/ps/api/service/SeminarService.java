@@ -21,6 +21,7 @@ import com.jtk.ps.api.dto.RecapitulationResponseDto;
 import com.jtk.ps.api.dto.SeminarValueParticipantDto;
 import com.jtk.ps.api.dto.SeminarCriteriaDto;
 import com.jtk.ps.api.dto.SeminarCriteriaRequestDto;
+import com.jtk.ps.api.dto.SeminarFormDto;
 import com.jtk.ps.api.dto.SeminarFormRequestDto;
 import com.jtk.ps.api.dto.SeminarFormResponseDto;
 import com.jtk.ps.api.dto.SeminarTotalValueDto;
@@ -219,15 +220,17 @@ public class SeminarService implements ISeminarService{
     }
 
     @Override
-    public List<SeminarFormResponseDto> findSeminarFormByParticipantId(Integer idParticipant) {
+    public SeminarFormResponseDto findSeminarFormByParticipantId(Integer idParticipant) {
         Integer isExist = seminarFormRepository.isSeminarFormExistByParticipantId(idParticipant);
 
-        List<SeminarFormResponseDto> response = new ArrayList<>();
+        List<SeminarFormDto> response = new ArrayList<>();
+        SeminarFormResponseDto sResponseDto = new SeminarFormResponseDto();
+        Optional<Participant> participant = participantRepository.findById(idParticipant);
 
         if(isExist == 1){
             List<SeminarForm> seminarForms = seminarFormRepository.findAllByParticipantId(idParticipant);
             seminarForms.forEach(s -> {
-                SeminarFormResponseDto temp = new SeminarFormResponseDto();
+                SeminarFormDto temp = new SeminarFormDto();
 
                 temp.setId(s.getId());
                 temp.setParticipantId(s.getParticipantId());
@@ -241,7 +244,7 @@ public class SeminarService implements ISeminarService{
         }else{
             for(int i = 0; i<3; i++){
                 SeminarForm seminarForm = new SeminarForm();
-                SeminarFormResponseDto temp = new SeminarFormResponseDto();
+                SeminarFormDto temp = new SeminarFormDto();
 
                 seminarForm.setParticipantId(idParticipant);
                 seminarForm.setExaminerType(i+1);
@@ -252,9 +255,16 @@ public class SeminarService implements ISeminarService{
                 seminarFormRepository.save(seminarForm);
                 response.add(temp);
             }
-
         }
-        return response;
+
+        sResponseDto.setDataForm(response);
+        sResponseDto.setId(idParticipant);
+        if(participant.isPresent()){
+            sResponseDto.setName(participant.get().getName());
+            sResponseDto.setNim(accountRepository.findNimParticipant(participant.get().getAccountId()));
+        }
+
+        return sResponseDto;
     }
 
     @Override
