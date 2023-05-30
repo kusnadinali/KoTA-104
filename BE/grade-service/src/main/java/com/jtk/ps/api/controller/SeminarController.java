@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.jtk.ps.api.dto.SeminarCriteriaRequestDto;
 import com.jtk.ps.api.dto.SeminarFormRequestDto;
 import com.jtk.ps.api.dto.SeminarValuesDto;
-import com.jtk.ps.api.service.SeminarService;
+import com.jtk.ps.api.service.Interface.ISeminarService;
 import com.jtk.ps.api.util.ResponseHandler;
 
 @RestController
@@ -30,7 +30,7 @@ public class SeminarController {
     // private static final Logger LOGGER = LoggerFactory.getLogger(SeminarService.class);
 
     @Autowired
-    private SeminarService seminarService;
+    private ISeminarService seminarService;
 
     @GetMapping("/company") // checked
     public ResponseEntity<Object> getAllCompany(){

@@ -376,7 +376,7 @@ public class SeminarService implements ISeminarService{
         
         List<Participant> participants = participantRepository.findAllByYearAndProdi(year, prodiId);
 
-        List<SeminarTotalValueDto> nilaiTotal     = new ArrayList<>();
+        List<SeminarTotalValueDto> nilaiTotal = new ArrayList<>();
 
         participants.forEach(p ->{
             Optional<SeminarForm> form1 = seminarFormRepository.findByParticipantAndTypeForm(p.getId(), 1);

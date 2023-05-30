@@ -396,8 +396,6 @@ public class CourseService implements ICourseService{
         });
 	}
 
-    
-
 	@Override
     public List<ComponentAndCriteriasDto> getCriteriaComponentByCourseFormId(Integer idForm) {
         
@@ -422,7 +420,7 @@ public class CourseService implements ICourseService{
                 CriteriaBodyDto criteriaTemp = new CriteriaBodyDto();
 
                 criteriaTemp.setComponentId(p.getComponentId());
-                criteriaTemp.setId(p.getId());;
+                criteriaTemp.setId(p.getId());
                 criteriaTemp.setNameForm(p.getNameForm());
                 criteriaTemp.setTypeForm(p.getTypeForm());
                 criteriaTemp.setBobotCriteria(p.getBobotCriteria());
@@ -443,7 +441,6 @@ public class CourseService implements ICourseService{
 
                 criteriaForResponses.add(criteriaTemp);
             });
-            // LOGGER.info(String.format("%%%%%%%%%%% => ", temp.getName()));
 
             temp.setCriteria_data(criteriaForResponses);
 
@@ -477,8 +474,8 @@ public class CourseService implements ICourseService{
             // jika criteria tidak ada pada newCriteria maka akan dihapus
             // menentukan soft delete atau hard delete
             if(isExist == 0){
-                LOGGER.info(String.format("year now ==> %d", Integer.valueOf(Year.now().toString())));
-                LOGGER.info(String.format("nilai dari is criteria %d", courseValuesRepository.isCriteriaInYearNowUse(o.getId(), Integer.valueOf(Year.now().toString()))));
+                // LOGGER.info(String.format("year now ==> %d", Integer.valueOf(Year.now().toString())));
+                // LOGGER.info(String.format("nilai dari is criteria %d", courseValuesRepository.isCriteriaInYearNowUse(o.getId(), Integer.valueOf(Year.now().toString()))));
 
                 // soft delete
                 if(courseValuesRepository.isCriteriaInBeforeYearUse(o.getId(), Integer.valueOf(Year.now().toString())) > 0){
