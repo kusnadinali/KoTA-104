@@ -1,5 +1,6 @@
 package com.jtk.ps.api.service.Interface;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 
 import com.jtk.ps.api.dto.CompanyNameDto;
@@ -43,7 +44,10 @@ public interface ISeminarService {
 
     public ExaminerSeminarDto getExaminer();
 
+    public ByteArrayInputStream load();
 
+    public ByteArrayInputStream loadSeminarType(Integer year, Integer prodiId, Integer formType);
+    public ByteArrayInputStream loadSeminar(Integer year, Integer prodiId);
 
 
 }

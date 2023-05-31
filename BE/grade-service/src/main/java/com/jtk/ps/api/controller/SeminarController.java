@@ -5,6 +5,7 @@ import java.util.List;
 
 // import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,6 +23,10 @@ import com.jtk.ps.api.dto.SeminarFormRequestDto;
 import com.jtk.ps.api.dto.SeminarValuesDto;
 import com.jtk.ps.api.service.Interface.ISeminarService;
 import com.jtk.ps.api.util.ResponseHandler;
+
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping("/api/seminar/")
@@ -90,6 +95,39 @@ public class SeminarController {
     @GetMapping("/examiner") // checked
     public ResponseEntity<Object> getExaminerSeminar(){
         return ResponseHandler.generateResponse("Get All Examiner Succeed",HttpStatus.OK,seminarService.getExaminer());
+    }
+
+    @GetMapping("/download")
+    public ResponseEntity<Resource> getFile() {
+        String filename = "tutorials.xlsx";
+        InputStreamResource file = new InputStreamResource(seminarService.load());
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+            .contentType(MediaType.parseMediaType("application/vnd.ms-excel"))
+            .body(file);
+    }
+
+    @GetMapping("/generate-seminar/type")
+    public ResponseEntity<Resource> getXLS(@RequestParam("year") Integer year, @RequestParam("prodiId") Integer prodiId, @RequestParam("formType") Integer formType) {
+        String filename = "rekapitulasi penguji "+ formType +".xlsx";
+        InputStreamResource file = new InputStreamResource(seminarService.loadSeminarType(year, prodiId, formType));
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+            .contentType(MediaType.parseMediaType("application/vnd.ms-excel"))
+            .body(file);
+    }
+
+    @GetMapping("/generate-seminar")
+    public ResponseEntity<Resource> getXLS(@RequestParam("year") Integer year, @RequestParam("prodiId") Integer prodiId) {
+        String filename = "rekapitulasi seminar "+year+".xlsx";
+        
+        InputStreamResource file = new InputStreamResource(seminarService.loadSeminar(year, prodiId));
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+            .contentType(MediaType.parseMediaType("application/vnd.ms-excel"))
+            .body(file);
     }
 
     // @PutMapping("/values/{id_form}")
