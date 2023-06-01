@@ -20,4 +20,6 @@ public class Account {
 
     @Column(name = "username", nullable = false)
     private String username;
+
+    private Integer role_id;
 }

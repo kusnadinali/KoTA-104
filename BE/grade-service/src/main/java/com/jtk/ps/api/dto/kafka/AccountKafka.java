@@ -1,4 +1,4 @@
-package com.jtk.ps.api.payload;
+package com.jtk.ps.api.dto.kafka;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,4 +11,6 @@ public class AccountKafka {
     private Integer id;
 
     private String username;
+
+    private Integer role_id;
 }
