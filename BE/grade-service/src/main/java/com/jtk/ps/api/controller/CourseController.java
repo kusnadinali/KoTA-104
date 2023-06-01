@@ -66,6 +66,11 @@ public class CourseController {
         return ResponseHandler.generateResponse("Get Aspects Evaluation succeed",HttpStatus.OK, courseService.getCriteriaByEvaluationForm(formType,prodiId));
     }
 
+    @GetMapping("/criteria/evaluation-form/aspect/type") // checked
+    public ResponseEntity<Object> getTypeAspectEvaluationForm(@RequestParam("formType") String formType,@RequestParam("prodiId") Integer prodiId){
+        return ResponseHandler.generateResponse("Get Type from Aspects Evaluation succeed",HttpStatus.OK, courseService.getTypeAspectEvaluationForm(formType, prodiId));
+    }
+
     @GetMapping("/component/course-form/{idForm}") // checked
     public ResponseEntity<Object> getComponentByCourseForm(@PathVariable("idForm") Integer idForm){
         return ResponseHandler.generateResponse("Get All Component By Course Form Id succeed",HttpStatus.OK, courseService.getComponentByCourseForm(idForm));

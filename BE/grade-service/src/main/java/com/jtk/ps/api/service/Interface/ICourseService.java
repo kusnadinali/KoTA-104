@@ -9,6 +9,7 @@ import com.jtk.ps.api.dto.CourseFormResponseDto;
 import com.jtk.ps.api.dto.CriteriaEvaluationFormDto;
 import com.jtk.ps.api.dto.EvaluationFormResponseDto;
 import com.jtk.ps.api.dto.RecapitulationCourseDto;
+import com.jtk.ps.api.dto.TypeOfAspectEvaluationDto;
 import com.jtk.ps.api.model.CourseForm;
 
 public interface ICourseService {
@@ -28,6 +29,8 @@ public interface ICourseService {
     List<EvaluationFormResponseDto> getEvaluationForm(Integer prodiId);
 
     List<CriteriaEvaluationFormDto> getCriteriaByEvaluationForm(String formType,Integer prodiId);
+
+    List<TypeOfAspectEvaluationDto> getTypeAspectEvaluationForm(String formType,Integer prodiId);
 
     void updateComponent(List<ComponentCourseDto> componentCourseDtos);
 

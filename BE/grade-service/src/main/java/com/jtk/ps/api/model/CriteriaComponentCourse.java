@@ -44,4 +44,5 @@ public class CriteriaComponentCourse {
 
     @Column(name = "is_deleted", nullable = false)
     private Integer isDeleted;
+
 }

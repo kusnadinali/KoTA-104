@@ -1,8 +1,11 @@
 package com.jtk.ps.api.service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +29,7 @@ import com.jtk.ps.api.dto.RecapitulationComponentDto;
 import com.jtk.ps.api.dto.RecapitulationCourseDto;
 import com.jtk.ps.api.dto.RecapitulationCriteriaDto;
 import com.jtk.ps.api.dto.RecapitulationParticipantDto;
+import com.jtk.ps.api.dto.TypeOfAspectEvaluationDto;
 import com.jtk.ps.api.model.Account;
 import com.jtk.ps.api.model.AssessmentAspect;
 import com.jtk.ps.api.model.ComponentCourse;
@@ -41,6 +45,7 @@ import com.jtk.ps.api.model.SeminarCriteria;
 import com.jtk.ps.api.model.SeminarValues;
 import com.jtk.ps.api.model.SupervisorGradeAspect;
 import com.jtk.ps.api.model.SupervisorGradeResult;
+import com.jtk.ps.api.model.Timeline;
 import com.jtk.ps.api.model.Valuation;
 import com.jtk.ps.api.repository.AccountRepository;
 import com.jtk.ps.api.repository.AssessmentAspectRepository;
@@ -58,6 +63,7 @@ import com.jtk.ps.api.repository.SeminarCriteriaRepository;
 import com.jtk.ps.api.repository.SeminarValuesRepository;
 import com.jtk.ps.api.repository.SupervisorGradeAspectRepository;
 import com.jtk.ps.api.repository.SupervisorGradeResultRepository;
+import com.jtk.ps.api.repository.TimelineRepository;
 import com.jtk.ps.api.repository.ValuationRepository;
 import com.jtk.ps.api.service.Interface.ICourseService;
 
@@ -133,6 +139,10 @@ public class CourseService implements ICourseService{
     @Autowired
     @Lazy
     private SeminarValuesRepository seminarValuesRepository;
+
+    @Autowired
+    @Lazy
+    private TimelineRepository timelineRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -359,6 +369,38 @@ public class CourseService implements ICourseService{
         return criteriaEvaluationForms;
     }
 
+    @Override
+    public List<TypeOfAspectEvaluationDto> getTypeAspectEvaluationForm(String formType,Integer prodiId){
+
+        String prodiName = "";
+        List<TypeOfAspectEvaluationDto> listTypes = new ArrayList<>();
+
+        if(prodiId == 0){
+            prodiName = "KP";
+        }else if(prodiId == 1){
+            prodiName = "PKL";
+        }
+
+        if(formType.equalsIgnoreCase("Self Assessment")){
+            Integer numbWeeks = timelineRepository.countWeekInSelfAssessment("%Pelaksanaan "+ prodiName+"%");
+
+            for(int i = 1; i <= numbWeeks; i++){
+                TypeOfAspectEvaluationDto type = new TypeOfAspectEvaluationDto();
+                type.setName("Minggu "+i);
+                listTypes.add(type);
+            }
+        }else if(formType.equalsIgnoreCase("Pembimbing")){
+            Integer numbPhase = timelineRepository.countPhaseMentor("%Pembimbing "+prodiName+"%");
+
+            for(int i = 1; i <= numbPhase; i++){
+                TypeOfAspectEvaluationDto type = new TypeOfAspectEvaluationDto();
+                type.setName("Phase "+i);
+                listTypes.add(type);
+            }
+        }
+        
+        return listTypes;
+    }
 	@Override
 	public List<ComponentCourseDto> getComponentByCourseForm(Integer idForm) {
 		
@@ -465,7 +507,29 @@ public class CourseService implements ICourseService{
                 CriteriaBodyDto n = newCriterias.getCriteria_data().get(i);
                 if(o.getId() == n.getId()){
                     o.setBobotCriteria(n.getBobotCriteria());
-                    
+                    o.setNameForm(n.getNameForm());
+                    o.setTypeForm(n.getTypeForm());
+
+                    // menghapus fk semua paada kriteria
+                    o.setIndustryCriteriaId(null);
+                    o.setSeminarCriteriaId(null);
+                    o.setSupervisorCriteriaId(null);
+                    o.setSelfAssessmentCriteriaId(null);
+                    switch(n.getNameForm()){
+                        case "Industri":
+                            o.setIndustryCriteriaId(n.getAspectFormId());
+                            break;
+                        case "Seminar":
+                            o.setSeminarCriteriaId(n.getAspectFormId());
+                            break;
+                        case "Pembimbing":
+                            o.setSupervisorCriteriaId(n.getAspectFormId());
+                            break;
+                        case "Self Assessment":
+                            o.setSelfAssessmentCriteriaId(n.getAspectFormId());
+                            break;
+                    }
+
                     isExist = 1;
                     doneUpdateOrDelete.add(n.getId());
                     eventStoreHandler("criteria_component_course", "CRITERIA_COMPONENT_COURSE_UPDATE",criteriaComponentCourseRepository.save(o), o.getId());
@@ -538,16 +602,15 @@ public class CourseService implements ICourseService{
     public List<RecapitulationCourseDto> getAllRecapitulationByYearAndProdiId(Integer year, Integer prodiId) {
         // tampilkan untuk tahun sekarang aja dulu
         // cari mata kuliah dengan tahun dan prodiId 
-        final Integer yearNow = Integer.parseInt(Year.now().toString());
         List<CourseForm> courseForms = new ArrayList<>();
-        if(year == yearNow){
+
+        if(Integer.parseInt(Year.now().toString()) == year){
             courseForms = courseFormRepository.findAllCourseByYearAndProdiId(year, prodiId);
         }else{
             courseForms = courseFormRepository.findAllOldCourseByYearAndProdiId(year, prodiId);
         }
 
         List<RecapitulationCourseDto> responseCourses = new ArrayList<>();
-
         courseForms.forEach(f -> {
             
             RecapitulationCourseDto tempCourseDtos = new RecapitulationCourseDto();
@@ -674,10 +737,9 @@ public class CourseService implements ICourseService{
     private List<RecapitulationCriteriaDto> getListCriteriaRecapitulation(Integer year, Integer prodiId, ComponentCourse component, Participant participant){
 
         List<RecapitulationCriteriaDto> tCriteriaDtos = new ArrayList<>();
-        Integer yearNow = Integer.parseInt(Year.now().toString());
 
         List<CriteriaComponentCourse> criteriaComponentCourses = new ArrayList<>();
-        if(year == yearNow){
+        if(year == Integer.parseInt(Year.now().toString())){
             criteriaComponentCourses = criteriaComponentCourseRepository.findAllByComponentId(component.getId());
         }else{
             criteriaComponentCourses = criteriaComponentCourseRepository.findCriteriaLastYear(year, component.getId());
@@ -686,7 +748,7 @@ public class CourseService implements ICourseService{
         criteriaComponentCourses.forEach(d -> {
             RecapitulationCriteriaDto tempRecapitulationCriteriaDto = new RecapitulationCriteriaDto();
             
-            if(year == yearNow){
+            if(year == Integer.parseInt(Year.now().toString())){
                 tempRecapitulationCriteriaDto.setBobot(d.getBobotCriteria());
             }else{
                 EventStore eventStoreCriteria = eventStoreRepository.getLastUpdateBobotCriteriaComponent(year, d.getId());
@@ -703,7 +765,7 @@ public class CourseService implements ICourseService{
             tempRecapitulationCriteriaDto.setFormType(d.getTypeForm());
             tempRecapitulationCriteriaDto.setNameAspect(getAspectNameInForm(d.getIndustryCriteriaId(), d.getSeminarCriteriaId(), d.getSupervisorCriteriaId(), d.getSelfAssessmentCriteriaId(), d.getNameForm()));
             tempRecapitulationCriteriaDto.setIdCriteria(d.getId());
-            tempRecapitulationCriteriaDto.setValue(findValueByCriteriaIdAndParticipantId(d,participant.getId()));
+            tempRecapitulationCriteriaDto.setValue(findValueByCriteriaIdAndParticipantId(d,participant.getId(),prodiId));
 
             tCriteriaDtos.add(tempRecapitulationCriteriaDto);
         });
@@ -711,7 +773,7 @@ public class CourseService implements ICourseService{
         return tCriteriaDtos;
     }
 
-    private Float findValueByCriteriaIdAndParticipantId(CriteriaComponentCourse criteria, Integer pId){
+    private Float findValueByCriteriaIdAndParticipantId(CriteriaComponentCourse criteria, Integer pId, Integer prodiId){
 
         Optional<CourseValues> courseValues = courseValuesRepository.findByCriteriaIdAndParticipantId(criteria.getId(), pId);
         CourseValues newValues = new CourseValues();
@@ -723,6 +785,7 @@ public class CourseService implements ICourseService{
             }else{
                 value = courseValues.get().getValue() * criteria.getBobotCriteria();
             }
+            
         }else{
             // jika nilai blm dimasukan ke tabel
             switch(criteria.getNameForm()){
@@ -743,72 +806,74 @@ public class CourseService implements ICourseService{
                     }
                     break;
                 case "Seminar":
-                    value = seminarValuesRepository.findValuesByCriteriaIdAndParticipantId(criteria.getSeminarCriteriaId(), pId);
-                    if(value != (float) 0){
-                        List<SeminarValues> tSeminarValues = seminarValuesRepository.findAllValuesCriteriaByParticipant(criteria.getSeminarCriteriaId(), pId);
-                        String seminarValuesId = new String();
+                    Optional<SeminarValues> sv = seminarValuesRepository.findByTypeExaminer(criteria.getSeminarCriteriaId(), pId, criteria.getTypeForm());
 
-                        for (int i = 0; i < tSeminarValues.size(); i++) {
-                            seminarValuesId = seminarValuesId.concat("-"+tSeminarValues.get(i).getId());
-                        }
-
-                        seminarValuesId = seminarValuesId.substring(1,seminarValuesId.length());
-
+                    if(sv.isPresent()){
                         newValues.setCreated_date(LocalDate.now());
                         newValues.setCriteriaId(criteria.getId());
-                        newValues.setSeminarValuesId(seminarValuesId);
+                        newValues.setSeminarValuesId(sv.get().getId());
                         newValues.setParticipantId(pId);
-                        newValues.setValue(value);
+                        newValues.setValue(sv.get().getValue());
 
                         courseValuesRepository.save(newValues);
+
+                        value = sv.get().getValue();
                     }else{
                         value = (float) 0;
                     }
                     break;
                 case "Pembimbing":
-                    value = supervisorGradeResultRepository.findValuesByAspectIdAndParticipantId(criteria.getSupervisorCriteriaId(), pId);
+                    Optional<SupervisorGradeResult> sGrade = supervisorGradeResultRepository.findValueByPhase(criteria.getSupervisorCriteriaId(), pId,criteria.getTypeForm().replaceAll("[^0-9]+", ""));
 
-                    if(value != (float) 0){
-                        List<SupervisorGradeResult> tGradeResults = supervisorGradeResultRepository.findAllValuesAspectByParticipant(criteria.getSupervisorCriteriaId(), pId);
-                        String supervisorValuesId = new String();
-
-                        for (int i = 0; i < tGradeResults.size(); i++) {
-                            supervisorValuesId = supervisorValuesId.concat("-"+tGradeResults.get(i).getId());
-                        }
-
-                        supervisorValuesId = supervisorValuesId.substring(1,supervisorValuesId.length());
-
+                    if(sGrade.isPresent()){
                         newValues.setCreated_date(LocalDate.now());
                         newValues.setCriteriaId(criteria.getId());
-                        newValues.setMentorValuesId(supervisorValuesId);
+                        newValues.setMentorValuesId(sGrade.get().getId());
                         newValues.setParticipantId(pId);
-                        newValues.setValue(value);
+                        newValues.setValue((float) sGrade.get().getValue());
 
                         courseValuesRepository.save(newValues);
+
+                        value = (float) sGrade.get().getValue();
+                    }else{
+                        value = 0f;
                     }
                     break;
                 case "Self Assessment":
                     value = selfAssessmentGradeRepository.findValuesByCriteriaIdAndParticipantId(criteria.getSelfAssessmentCriteriaId(), pId);
-                    if(value != (float) 0){
-                        List<SelfAssessmentGrade> tAssessmentGrades = selfAssessmentGradeRepository.findAllValuesCriteriaByParticipant(criteria.getSelfAssessmentCriteriaId(), pId);
-                        String assessmentValuesId = new String();
+                        String prodiName = "";
+                        if(prodiId == 0){
+                            prodiName = "KP";
+                        }else{
+                            prodiName = "PKL";
+                        }
+                        
+                        Optional<Timeline> timeline = timelineRepository.findByName("Pelaksanaan "+prodiName);
 
-                        for (int i = 0; i < tAssessmentGrades.size(); i++) {
-                            assessmentValuesId = assessmentValuesId.concat("-"+tAssessmentGrades.get(i).getId());
+                        if(timeline.isPresent()){
+                            LocalDate startDate = timeline.get().getStartDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+                            // Menyesuaikan tanggal awal dengan minggu ke-3
+                            LocalDate week = startDate.with(TemporalAdjusters.dayOfWeekInMonth(Integer.parseInt(criteria.getTypeForm().replaceAll("[^0-9]+", "")), DayOfWeek.MONDAY));
+
+                            Optional<SelfAssessmentGrade> selfAssessmentGrade = selfAssessmentGradeRepository.findByStartDate(criteria.getSelfAssessmentCriteriaId(), pId, week.toString());
+                            
+                            if(selfAssessmentGrade.isPresent()){
+                                newValues.setCreated_date(LocalDate.now());
+                                newValues.setCriteriaId(criteria.getId());
+                                newValues.setSelfAssessmentValuesId(selfAssessmentGrade.get().getId());
+                                newValues.setValue((float) selfAssessmentGrade.get().getValueSelfAssessment());
+                                newValues.setParticipantId(pId);
+
+                                courseValuesRepository.save(newValues);
+
+                                value = (float) selfAssessmentGrade.get().getValueSelfAssessment();
+                            }else{
+                                value = (float) 0;
+                            }
                         }
 
-                        assessmentValuesId = assessmentValuesId.substring(1,assessmentValuesId.length());
-
-                        newValues.setCreated_date(LocalDate.now());
-                        newValues.setCriteriaId(criteria.getId());
-                        newValues.setSelfAssessmentValuesId(assessmentValuesId);
-                        newValues.setValue(value);
-                        newValues.setParticipantId(pId);
-
-                        courseValuesRepository.save(newValues);
-                    }else{
-                        value = (float) 0;
-                    }
+                        
                     break;
             }
         }
