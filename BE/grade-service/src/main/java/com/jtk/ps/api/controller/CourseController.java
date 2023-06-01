@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.jtk.ps.api.dto.ComponentAndCriteriasDto;
 import com.jtk.ps.api.dto.ComponentCourseDto;
 import com.jtk.ps.api.dto.CourseFormRequestDto;
-import com.jtk.ps.api.service.CourseService;
+import com.jtk.ps.api.service.Interface.ICourseService;
 import com.jtk.ps.api.util.ResponseHandler;
 
 @RestController
@@ -26,7 +26,7 @@ import com.jtk.ps.api.util.ResponseHandler;
 public class CourseController {
     
     @Autowired
-    private CourseService courseService;
+    private ICourseService courseService;
     
     @GetMapping("/form") //checked
     public ResponseEntity<Object> getAllCourseForm(){
@@ -64,6 +64,11 @@ public class CourseController {
     @GetMapping("/criteria/evaluation-form/aspect") // checked
     public ResponseEntity<Object> getAspectEvaluationForm(@RequestParam("formType") String formType,@RequestParam("prodiId") Integer prodiId){
         return ResponseHandler.generateResponse("Get Aspects Evaluation succeed",HttpStatus.OK, courseService.getCriteriaByEvaluationForm(formType,prodiId));
+    }
+
+    @GetMapping("/criteria/evaluation-form/aspect/type") // checked
+    public ResponseEntity<Object> getTypeAspectEvaluationForm(@RequestParam("formType") String formType,@RequestParam("prodiId") Integer prodiId){
+        return ResponseHandler.generateResponse("Get Type from Aspects Evaluation succeed",HttpStatus.OK, courseService.getTypeAspectEvaluationForm(formType, prodiId));
     }
 
     @GetMapping("/component/course-form/{idForm}") // checked

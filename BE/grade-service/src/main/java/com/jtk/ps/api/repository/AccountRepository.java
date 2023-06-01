@@ -16,4 +16,7 @@ public interface AccountRepository extends JpaRepository<Account,Integer>{
 
     @Query(value = "select a.* from account a where a.role_id = 0", nativeQuery = true)
     List<Account> findExaminerAccount();
+
+    @Query(value = "select a.username from account a where a.id = :idAccount and a.role_id = 1", nativeQuery = true)
+    String findNimParticipant(Integer idAccount);
 }

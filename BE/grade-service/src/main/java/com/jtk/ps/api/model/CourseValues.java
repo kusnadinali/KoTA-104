@@ -26,13 +26,13 @@ public class CourseValues {
     private Integer criteriaId;
 
     @Column(name = "mentor_values_id")
-    private String mentorValuesId;
+    private Integer mentorValuesId;
 
     @Column(name = "self_assessment_values_id")
-    private String selfAssessmentValuesId;
+    private Integer selfAssessmentValuesId;
 
     @Column(name = "seminar_values_id")
-    private String seminarValuesId;
+    private Integer seminarValuesId;
 
     @Column(name = "industry_values_id")
     private Integer industryValuesId;

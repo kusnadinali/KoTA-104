@@ -1,5 +1,6 @@
 package com.jtk.ps.api.service;
 
+import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.*;
@@ -21,10 +22,12 @@ import com.jtk.ps.api.dto.RecapitulationResponseDto;
 import com.jtk.ps.api.dto.SeminarValueParticipantDto;
 import com.jtk.ps.api.dto.SeminarCriteriaDto;
 import com.jtk.ps.api.dto.SeminarCriteriaRequestDto;
+import com.jtk.ps.api.dto.SeminarFormDto;
 import com.jtk.ps.api.dto.SeminarFormRequestDto;
 import com.jtk.ps.api.dto.SeminarFormResponseDto;
 import com.jtk.ps.api.dto.SeminarTotalValueDto;
 import com.jtk.ps.api.dto.SeminarValuesDto;
+import com.jtk.ps.api.helper.ExcelHelper;
 import com.jtk.ps.api.model.Account;
 import com.jtk.ps.api.model.Company;
 import com.jtk.ps.api.model.EventStore;
@@ -32,6 +35,7 @@ import com.jtk.ps.api.model.Participant;
 import com.jtk.ps.api.model.SeminarCriteria;
 import com.jtk.ps.api.model.SeminarForm;
 import com.jtk.ps.api.model.SeminarValues;
+import com.jtk.ps.api.model.Tutorial;
 import com.jtk.ps.api.repository.AccountRepository;
 import com.jtk.ps.api.repository.CompanyRepository;
 import com.jtk.ps.api.repository.EventStoreRepository;
@@ -39,6 +43,7 @@ import com.jtk.ps.api.repository.ParticipantRepository;
 import com.jtk.ps.api.repository.SeminarCriteriaRepository;
 import com.jtk.ps.api.repository.SeminarFormRepository;
 import com.jtk.ps.api.repository.SeminarValuesRepository;
+import com.jtk.ps.api.repository.TutorialRepository;
 import com.jtk.ps.api.service.Interface.ISeminarService;
 
 @Service
@@ -73,6 +78,9 @@ public class SeminarService implements ISeminarService{
     @Autowired
     @Lazy
     private EventStoreRepository eventStoreRepository;
+
+    @Autowired
+    TutorialRepository repository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -194,6 +202,7 @@ public class SeminarService implements ISeminarService{
         
         criteriaDeleted.ifPresent(c ->{
             c.setIsDeleted(1);
+            c.setIsSelected(0);
 
             // criteria deleted
             eventStoreHandler("seminar_criteria", "SEMINAR_CRITERIA_UPDATE", seminarCriteriaRepository.save(c),idSeminarCriteria);
@@ -219,15 +228,17 @@ public class SeminarService implements ISeminarService{
     }
 
     @Override
-    public List<SeminarFormResponseDto> findSeminarFormByParticipantId(Integer idParticipant) {
+    public SeminarFormResponseDto findSeminarFormByParticipantId(Integer idParticipant) {
         Integer isExist = seminarFormRepository.isSeminarFormExistByParticipantId(idParticipant);
 
-        List<SeminarFormResponseDto> response = new ArrayList<>();
+        List<SeminarFormDto> response = new ArrayList<>();
+        SeminarFormResponseDto sResponseDto = new SeminarFormResponseDto();
+        Optional<Participant> participant = participantRepository.findById(idParticipant);
 
         if(isExist == 1){
             List<SeminarForm> seminarForms = seminarFormRepository.findAllByParticipantId(idParticipant);
             seminarForms.forEach(s -> {
-                SeminarFormResponseDto temp = new SeminarFormResponseDto();
+                SeminarFormDto temp = new SeminarFormDto();
 
                 temp.setId(s.getId());
                 temp.setParticipantId(s.getParticipantId());
@@ -241,7 +252,7 @@ public class SeminarService implements ISeminarService{
         }else{
             for(int i = 0; i<3; i++){
                 SeminarForm seminarForm = new SeminarForm();
-                SeminarFormResponseDto temp = new SeminarFormResponseDto();
+                SeminarFormDto temp = new SeminarFormDto();
 
                 seminarForm.setParticipantId(idParticipant);
                 seminarForm.setExaminerType(i+1);
@@ -252,9 +263,16 @@ public class SeminarService implements ISeminarService{
                 seminarFormRepository.save(seminarForm);
                 response.add(temp);
             }
-
         }
-        return response;
+
+        sResponseDto.setDataForm(response);
+        sResponseDto.setId(idParticipant);
+        if(participant.isPresent()){
+            sResponseDto.setName(participant.get().getName());
+            sResponseDto.setNim(accountRepository.findNimParticipant(participant.get().getAccountId()));
+        }
+
+        return sResponseDto;
     }
 
     @Override
@@ -300,7 +318,7 @@ public class SeminarService implements ISeminarService{
 
             sFTemp.ifPresent(sftemp -> {
 
-                List<SeminarValues> values = seminarValuesRepository.findAllByForm(sftemp.getId());
+                List<SeminarValues> values = seminarValuesRepository.findAllByFormv2(sftemp.getId());
 
                 // proses memasukan identitas peserta
                 ParticipantDto participantDto = new ParticipantDto();
@@ -366,7 +384,7 @@ public class SeminarService implements ISeminarService{
         
         List<Participant> participants = participantRepository.findAllByYearAndProdi(year, prodiId);
 
-        List<SeminarTotalValueDto> nilaiTotal     = new ArrayList<>();
+        List<SeminarTotalValueDto> nilaiTotal = new ArrayList<>();
 
         participants.forEach(p ->{
             Optional<SeminarForm> form1 = seminarFormRepository.findByParticipantAndTypeForm(p.getId(), 1);
@@ -445,5 +463,30 @@ public class SeminarService implements ISeminarService{
         return response;
     }
 
-    
+    public ByteArrayInputStream load() {
+        List<Tutorial> tutorials = repository.findAll();
+
+        ByteArrayInputStream in = ExcelHelper.tutorialsToExcel(tutorials);
+        return in;
+    }
+
+    public ByteArrayInputStream loadSeminarType(Integer year, Integer prodiId, Integer formType) {
+        List<SeminarCriteria> criterias = seminarCriteriaRepository.findAllBySelected();
+        List<SeminarValueParticipantDto> list = this.getRecapitulationByTypeForm(year, prodiId, formType);
+
+        ByteArrayInputStream in = ExcelHelper.recapSeminartoExcelByType(list,"penguji "+formType, criterias);
+        return in;
+    }
+
+    public ByteArrayInputStream loadSeminar(Integer year, Integer prodiId) {
+        List<SeminarCriteria> criterias = seminarCriteriaRepository.findAllBySelected();
+        List<List<SeminarValueParticipantDto>> Llist = new ArrayList<>();
+        for(int i = 0; i < 3; i++){
+            List<SeminarValueParticipantDto> list = this.getRecapitulationByTypeForm(year, prodiId, i+1);
+            Llist.add(list);
+        }
+        List<SeminarTotalValueDto> listTotal = this.getRecapitulationTotal(year, prodiId);
+        ByteArrayInputStream in = ExcelHelper.recapSeminartoExcel(criterias,Llist, listTotal);
+        return in;
+    }
 }
