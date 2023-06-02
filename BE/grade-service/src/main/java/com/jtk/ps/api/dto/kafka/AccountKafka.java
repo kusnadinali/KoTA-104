@@ -13,4 +13,6 @@ public class AccountKafka {
     private String username;
 
     private Integer role_id;
+
+    private String operation;
 }

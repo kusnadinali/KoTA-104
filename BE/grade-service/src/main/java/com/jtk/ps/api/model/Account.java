@@ -22,4 +22,6 @@ public class Account {
     private String username;
 
     private Integer role_id;
+
+    private Integer is_delete;
 }

@@ -1,6 +1,7 @@
 package com.jtk.ps.api.helper;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,29 +50,50 @@ public class KafkaConsumer {
         }
     }
 
-    @KafkaListener(topics = "account_topic", groupId = "newGroup")
-    public void consume(String message){
+    @KafkaListener(topics = "account_topic", groupId = "tryGroup")
+    public void consumeAccountService(String message){
         LOGGER.info(String.format("Message received -> %s", message));
         try {
             // Mengubah string JSON menjadi objek
             ObjectMapper objectMapper = new ObjectMapper();
             AccountKafka receivedObject = objectMapper.readValue(message, AccountKafka.class);
-            Account account = new Account();
 
             // Lakukan operasi apa pun pada objek yang diterima
+            System.out.println("==============-----------------------------=========================");
             System.out.println("ID: " + receivedObject.getId());
             System.out.println("Username: " + receivedObject.getUsername());
             System.out.println("Role Id: " + receivedObject.getRole_id());
+            System.out.println("Operation: " + receivedObject.getOperation());
+
 
             // proses melakukan save pada tabel account
-            account.setId(receivedObject.getId());
-            account.setRole_id(receivedObject.getRole_id());
-            account.setUsername(receivedObject.getUsername());
+            if(receivedObject.getOperation().equalsIgnoreCase("ADDED")){
+                Account account = new Account();
+                account.setRole_id(receivedObject.getRole_id());
+                account.setUsername(receivedObject.getUsername());
+                account.setId(receivedObject.getId());
+                account.setIs_delete(0);
 
-            accountRepository.save(account);
+                accountRepository.save(account);
+                eventStoreHandler("account", "ACCOUNT_ADDED", account, account.getId());
+            }
+            else if(receivedObject.getOperation().equalsIgnoreCase("UPDATE")){
+                Optional<Account> account = accountRepository.findById(receivedObject.getId());
+                account.ifPresent(c -> {
+                    c.setRole_id(receivedObject.getRole_id());
+                    accountRepository.save(c);
+                    eventStoreHandler( "account", "ACCOUNT_UPDATE", c, c.getId());
+                });
+            }else if(receivedObject.getOperation().equalsIgnoreCase("DELETE")){
+                Optional<Account> account = accountRepository.findById(receivedObject.getId());
 
-            // proses mencatat perubahan pada event store
-            eventStoreHandler("Account", "ACCOUNT_ADDED", account, account.getId());
+                account.ifPresent(c -> {
+                    c.setIs_delete(1);
+                    accountRepository.save(c);
+                    eventStoreHandler("account", "ACCOUNT_DELETE", c, c.getId());
+                });
+                
+            }
 
         } catch (JsonProcessingException e) {
             e.printStackTrace();
