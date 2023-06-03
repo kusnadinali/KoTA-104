@@ -9,7 +9,7 @@ public class ValuationKafka {
     
     private Integer id;
 
-    private String aspect_name;
+    private String aspectName;
 
     private Integer value;
 

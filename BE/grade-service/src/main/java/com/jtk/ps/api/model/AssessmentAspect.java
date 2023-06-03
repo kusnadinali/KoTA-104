@@ -23,4 +23,7 @@ public class AssessmentAspect {
 
     @Column(name = "evaluation_form_id")
     private Integer evaluationFormId;
+
+    @Column(name = "is_delete")
+    private Integer isDelete;
 }
