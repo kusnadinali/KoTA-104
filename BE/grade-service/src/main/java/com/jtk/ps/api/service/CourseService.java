@@ -284,25 +284,13 @@ public class CourseService implements ICourseService{
 
         List<EvaluationFormResponseDto> evaluationForms = new ArrayList<>();
 
-        List<EvaluationForm> industriForms = evaluationFormRepository.findAllByProdiId(prodiId);
-
         for (int i = 0; i < formNames.length; i++) {
-            if(formNames[i] == "Industri"){
-                industriForms.forEach(c -> {
-                    EvaluationFormResponseDto temp = new EvaluationFormResponseDto();
-                    temp.setFormType("Industri "+String.valueOf(c.getNumEvaluation()));
-                    temp.setFormName("Industri");
-
-                    evaluationForms.add(temp);
-                });
-            }else{
                 EvaluationFormResponseDto temp = new EvaluationFormResponseDto();
 
                 temp.setFormType(formNames[i]);
                 temp.setFormName(formNames[i]);
 
                 evaluationForms.add(temp);
-            }
         }
 
         return evaluationForms;
@@ -397,6 +385,25 @@ public class CourseService implements ICourseService{
                 type.setName("Phase "+i);
                 listTypes.add(type);
             }
+        }else if(formType.equalsIgnoreCase("Seminar")){
+            TypeOfAspectEvaluationDto penguji1 = new TypeOfAspectEvaluationDto();
+            penguji1.setName("Penguji 1");
+            listTypes.add(penguji1);
+
+            TypeOfAspectEvaluationDto penguji2 = new TypeOfAspectEvaluationDto();
+            penguji2.setName("Penguji 2");
+            listTypes.add(penguji2);
+
+            TypeOfAspectEvaluationDto penguji3 = new TypeOfAspectEvaluationDto();
+            penguji3.setName("Pembimbing");
+            listTypes.add(penguji3);
+        }else if(formType.equalsIgnoreCase("Industri")){
+            List<EvaluationForm> industriForms = evaluationFormRepository.findAllByProdiId(prodiId);
+            industriForms.forEach(c -> {
+                TypeOfAspectEvaluationDto type = new TypeOfAspectEvaluationDto();
+                type.setName("Industri "+String.valueOf(c.getNumEvaluation()));
+                listTypes.add(type);
+            });
         }
         
         return listTypes;
