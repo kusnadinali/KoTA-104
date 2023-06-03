@@ -16,6 +16,15 @@ import com.jtk.ps.api.dto.kafka.AccountKafka;
 import com.jtk.ps.api.dto.kafka.AssessmentAspectKafka;
 import com.jtk.ps.api.dto.kafka.CompanyKafka;
 import com.jtk.ps.api.dto.kafka.EvaluationKafka;
+import com.jtk.ps.api.dto.kafka.FinalMappingKafka;
+import com.jtk.ps.api.dto.kafka.ParticipantKafka;
+import com.jtk.ps.api.dto.kafka.SelfAssessmentAspectKafka;
+import com.jtk.ps.api.dto.kafka.SelfAssessmentGradeKafka;
+import com.jtk.ps.api.dto.kafka.SelfAssessmentKafka;
+import com.jtk.ps.api.dto.kafka.SupervisorGradeAspectKafka;
+import com.jtk.ps.api.dto.kafka.SupervisorGradeKafka;
+import com.jtk.ps.api.dto.kafka.SupervisorGradeResultKafka;
+import com.jtk.ps.api.dto.kafka.SupervisorMappingKafka;
 import com.jtk.ps.api.dto.kafka.TimelineKafka;
 import com.jtk.ps.api.dto.kafka.ValuationKafka;
 import com.jtk.ps.api.model.Account;
@@ -23,6 +32,15 @@ import com.jtk.ps.api.model.AssessmentAspect;
 import com.jtk.ps.api.model.Company;
 import com.jtk.ps.api.model.Evaluation;
 import com.jtk.ps.api.model.EventStore;
+import com.jtk.ps.api.model.FinalMapping;
+import com.jtk.ps.api.model.Participant;
+import com.jtk.ps.api.model.SelfAssessment;
+import com.jtk.ps.api.model.SelfAssessmentAspect;
+import com.jtk.ps.api.model.SelfAssessmentGrade;
+import com.jtk.ps.api.model.SupervisorGrade;
+import com.jtk.ps.api.model.SupervisorGradeAspect;
+import com.jtk.ps.api.model.SupervisorGradeResult;
+import com.jtk.ps.api.model.SupervisorMapping;
 import com.jtk.ps.api.model.Timeline;
 import com.jtk.ps.api.model.Valuation;
 import com.jtk.ps.api.repository.AccountRepository;
@@ -31,6 +49,15 @@ import com.jtk.ps.api.repository.CompanyRepository;
 import com.jtk.ps.api.repository.CriteriaComponentCourseRepository;
 import com.jtk.ps.api.repository.EvaluationRepository;
 import com.jtk.ps.api.repository.EventStoreRepository;
+import com.jtk.ps.api.repository.FinalMappingRepository;
+import com.jtk.ps.api.repository.ParticipantRepository;
+import com.jtk.ps.api.repository.SelfAssessmentAspectRepository;
+import com.jtk.ps.api.repository.SelfAssessmentGradeRepository;
+import com.jtk.ps.api.repository.SelfAssessmentRepository;
+import com.jtk.ps.api.repository.SupervisorGradeAspectRepository;
+import com.jtk.ps.api.repository.SupervisorGradeRepository;
+import com.jtk.ps.api.repository.SupervisorGradeResultRepository;
+import com.jtk.ps.api.repository.SupervisorMappingRepository;
 import com.jtk.ps.api.repository.TimelineRepository;
 import com.jtk.ps.api.repository.ValuationRepository;
 
@@ -68,6 +95,42 @@ public class KafkaConsumer {
     @Autowired
     @Lazy
     private TimelineRepository timelineRepository;
+
+    @Autowired
+    @Lazy
+    private ParticipantRepository participantRepository;
+
+    @Autowired
+    @Lazy
+    private FinalMappingRepository finalMappingRepository;
+
+    @Autowired
+    @Lazy
+    private SelfAssessmentRepository selfAssessmentRepository;
+
+    @Autowired
+    @Lazy
+    private SelfAssessmentGradeRepository selfAssessmentGradeRepository;
+
+    @Autowired
+    @Lazy
+    private SelfAssessmentAspectRepository selfAssessmentAspectRepository;
+
+    @Autowired
+    @Lazy
+    private SupervisorGradeRepository supervisorGradeRepository;
+
+    @Autowired
+    @Lazy
+    private SupervisorGradeResultRepository supervisorGradeResultRepository;
+    
+    @Autowired
+    @Lazy
+    private SupervisorGradeAspectRepository supervisorGradeAspectRepository;
+
+    @Autowired
+    @Lazy
+    private SupervisorMappingRepository supervisorMappingRepository;
 
     @Autowired
     @Lazy
@@ -370,6 +433,382 @@ public class KafkaConsumer {
                 timelineRepository.findById(receivedObject.getId()).ifPresent(c -> {
                     timelineRepository.delete(c);
                     eventStoreHandler("timeline_setting", "TIMELINE_SETTING_DELETE", c, c.getId());
+                });
+            }
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @KafkaListener(topics = "participant_topic", groupId = groupId)
+    public void consumeParticipant(String message){
+        LOGGER.info(String.format("Message Participant received -> %s", message));
+        try {
+            // Mengubah string JSON menjadi objek
+            ObjectMapper objectMapper = new ObjectMapper();
+            ParticipantKafka receivedObject = objectMapper.readValue(message, ParticipantKafka.class);
+
+            // Lakukan operasi apa pun pada objek yang diterima
+            System.out.println("==============-----------------------------==============");
+            System.out.println("ID: " + receivedObject.getId());
+            System.out.println("Data: " + receivedObject.toString());
+            System.out.println("==============-----------------------------==============");
+
+
+            // proses melakukan save pada tabel account
+            if(receivedObject.getOperation().equalsIgnoreCase("ADDED")){
+                Participant participant = new Participant();
+
+                participant.setAccountId(receivedObject.getAccount_id());
+                participant.setId(receivedObject.getId());
+                participant.setName(receivedObject.getName());
+                participant.setProdiId(receivedObject.getProdi_id());
+                participant.setStatusCv(receivedObject.isStatus_cv()?1:0);
+                participant.setYear(receivedObject.getYear());
+
+                participantRepository.save(participant);
+                eventStoreHandler("participant", "PARTICIPANT_ADDED", participant, participant.getId());
+            }
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @KafkaListener(topics = "final_mapping_topic", groupId = groupId)
+    public void consumeFinalMapping(String message){
+        LOGGER.info(String.format("Message Final Mapping received -> %s", message));
+        try {
+            // Mengubah string JSON menjadi objek
+            ObjectMapper objectMapper = new ObjectMapper();
+            FinalMappingKafka receivedObject = objectMapper.readValue(message, FinalMappingKafka.class);
+
+            // Lakukan operasi apa pun pada objek yang diterima
+            System.out.println("==============-----------------------------==============");
+            System.out.println("ID: " + receivedObject.getId());
+            System.out.println("Data: " + receivedObject.toString());
+            System.out.println("==============-----------------------------==============");
+
+
+            // proses melakukan save pada tabel account
+            if(receivedObject.getOperation().equalsIgnoreCase("ADDED")){
+                FinalMapping finalMapping = new FinalMapping();
+
+                finalMapping.setCompanyId(receivedObject.getCompany_id());
+                finalMapping.setId(receivedObject.getId());
+                finalMapping.setParticipantId(receivedObject.getParticipant_id());
+                finalMapping.setProdiId(receivedObject.getProdi_id());
+                finalMapping.setYear(receivedObject.getYear());
+
+                finalMappingRepository.save(finalMapping);
+
+                eventStoreHandler("final_mapping", "FINAL_MAPPING_ADDED", finalMapping, finalMapping.getId());
+            }else if(receivedObject.getOperation().equalsIgnoreCase("DELETE")){
+                finalMappingRepository.findById(receivedObject.getId()).ifPresent(fm -> {
+                    finalMappingRepository.delete(fm);
+                    eventStoreHandler("final_mapping", "FINAL_MAPPING_DELETE", fm, fm.getId());
+                });
+            }
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @KafkaListener(topics = "self_assessment_topic", groupId = groupId)
+    public void consumeSelfAssessmentForm(String message){
+        LOGGER.info(String.format("Message Self Assessment received -> %s", message));
+        try {
+            // Mengubah string JSON menjadi objek
+            ObjectMapper objectMapper = new ObjectMapper();
+            SelfAssessmentKafka receivedObject = objectMapper.readValue(message, SelfAssessmentKafka.class);
+
+            // Lakukan operasi apa pun pada objek yang diterima
+            System.out.println("==============-----------------------------==============");
+            System.out.println("ID: " + receivedObject.getId());
+            System.out.println("Data: " + receivedObject.toString());
+            System.out.println("==============-----------------------------==============");
+
+
+            // proses melakukan save pada tabel account
+            if(receivedObject.getOperation().equalsIgnoreCase("ADDED")){
+                SelfAssessment selfAssessment = new SelfAssessment();
+
+                selfAssessment.setFinish_date(receivedObject.getFinish_date());
+                selfAssessment.setId(receivedObject.getId());
+                selfAssessment.setParticipantId(receivedObject.getParticipant_id());
+                selfAssessment.setStart_date(receivedObject.getStart_date());
+
+                selfAssessmentRepository.save(selfAssessment);
+                eventStoreHandler("self_assessment", "SELF_ASSESSMENT_ADDED", selfAssessment, selfAssessment.getId());
+            }else if(receivedObject.getOperation().equalsIgnoreCase("UPDATE")){
+                selfAssessmentRepository.findById(receivedObject.getId()).ifPresent(sa -> {
+                    sa.setFinish_date(receivedObject.getFinish_date());
+                    sa.setParticipantId(receivedObject.getParticipant_id());
+                    sa.setStart_date(receivedObject.getStart_date());
+
+                    selfAssessmentRepository.save(sa);
+                    eventStoreHandler("self_assessment", "SELF_ASSESSMENT_UPDATE", sa, sa.getId());
+                });
+            }
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @KafkaListener(topics = "self_assessment_grade_topic", groupId = groupId)
+    public void consumeSelfAssessmentGrade(String message){
+        LOGGER.info(String.format("Message Self Assessment received -> %s", message));
+        try {
+            // Mengubah string JSON menjadi objek
+            ObjectMapper objectMapper = new ObjectMapper();
+            SelfAssessmentGradeKafka receivedObject = objectMapper.readValue(message, SelfAssessmentGradeKafka.class);
+
+            // Lakukan operasi apa pun pada objek yang diterima
+            System.out.println("==============-----------------------------==============");
+            System.out.println("ID: " + receivedObject.getId());
+            System.out.println("Data: " + receivedObject.toString());
+            System.out.println("==============-----------------------------==============");
+
+
+            // proses melakukan save pada tabel account
+            if(receivedObject.getOperation().equalsIgnoreCase("ADDED")){
+                SelfAssessmentGrade grade = new SelfAssessmentGrade();
+
+                grade.setCriteriaSelfAssessmentId(receivedObject.getCriteriaSelfAssessmentId());
+                grade.setId(receivedObject.getId());
+                grade.setParticipantId(receivedObject.getParticipantId());
+                grade.setSelfAssessmentId(receivedObject.getSelfAssessmentId());
+                grade.setValueSelfAssessment(receivedObject.getGradeSelfAssessment());
+
+                selfAssessmentGradeRepository.save(grade);
+                eventStoreHandler("self_assessment_grade", "SELF_ASSESSMENT_GRADE_ADDED", grade, grade.getId());
+            }else if(receivedObject.getOperation().equalsIgnoreCase("UPDATE")){
+
+                selfAssessmentGradeRepository.findById(receivedObject.getId()).ifPresent(sa ->{
+                    sa.setCriteriaSelfAssessmentId(receivedObject.getCriteriaSelfAssessmentId());
+                    sa.setParticipantId(receivedObject.getParticipantId());
+                    sa.setSelfAssessmentId(receivedObject.getSelfAssessmentId());
+                    sa.setValueSelfAssessment(receivedObject.getGradeSelfAssessment());
+
+                    selfAssessmentGradeRepository.save(sa);
+                    eventStoreHandler("self_assessment_grade", "SELF_ASSESSMENT_GRADE_UPDATE", sa, sa.getId());
+                });
+            }
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @KafkaListener(topics = "self_assessment_aspect_topic", groupId = groupId)
+    public void consumeSelfAssessmentAspect(String message){
+        LOGGER.info(String.format("Message Self Assessment received -> %s", message));
+        try {
+            // Mengubah string JSON menjadi objek
+            ObjectMapper objectMapper = new ObjectMapper();
+            SelfAssessmentAspectKafka receivedObject = objectMapper.readValue(message, SelfAssessmentAspectKafka.class);
+
+            // Lakukan operasi apa pun pada objek yang diterima
+            System.out.println("==============-----------------------------==============");
+            System.out.println("ID: " + receivedObject.getId());
+            System.out.println("Data: " + receivedObject.toString());
+            System.out.println("==============-----------------------------==============");
+
+
+            // proses melakukan save pada tabel account
+            if(receivedObject.getOperation().equalsIgnoreCase("ADDED")){
+                SelfAssessmentAspect aspect = new SelfAssessmentAspect();
+
+                aspect.setDescription(receivedObject.getDescription());
+                aspect.setId(receivedObject.getId());
+                aspect.setName(receivedObject.getName());
+
+                selfAssessmentAspectRepository.save(aspect);
+                eventStoreHandler("self_assessment_aspect", "SELF_ASSESSMENT_ASPECT_ADDED", aspect, aspect.getId());
+            }else if(receivedObject.getOperation().equalsIgnoreCase("UPDATE")){
+                selfAssessmentAspectRepository.findById(receivedObject.getId()).ifPresent(sa -> {
+                    sa.setDescription(receivedObject.getDescription());
+                    sa.setName(receivedObject.getName());
+
+                    selfAssessmentAspectRepository.save(sa);
+                    eventStoreHandler("self_assessment_aspect", "SELF_ASSESSMENT_ASPECT_UPDATE", sa, sa.getId());
+                });
+            }
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @KafkaListener(topics = "supervisor_topic", groupId = groupId)
+    public void consumeSupervisorGrade(String message){
+        LOGGER.info(String.format("Message Supervisor received -> %s", message));
+        try {
+            // Mengubah string JSON menjadi objek
+            ObjectMapper objectMapper = new ObjectMapper();
+            SupervisorGradeKafka receivedObject = objectMapper.readValue(message, SupervisorGradeKafka.class);
+
+            // Lakukan operasi apa pun pada objek yang diterima
+            System.out.println("==============-----------------------------==============");
+            System.out.println("ID: " + receivedObject.getId());
+            System.out.println("Data: " + receivedObject.toString());
+            System.out.println("==============-----------------------------==============");
+
+
+            // proses melakukan save pada tabel account
+            if(receivedObject.getOperation().equalsIgnoreCase("ADDED")){
+                SupervisorGrade supervisor = new SupervisorGrade();
+
+                supervisor.setDate(receivedObject.getDate());
+                supervisor.setId(receivedObject.getId());
+                supervisor.setParticipantId(receivedObject.getParticipantId());
+                supervisor.setPhase(receivedObject.getPhase());
+                supervisor.setSupervisorGradeId(receivedObject.getSupervisorGradeId());
+
+                supervisorGradeRepository.save(supervisor);
+                eventStoreHandler("supervisor_grade", "SUPERVISOR_GRADE_ADDED", supervisor, supervisor.getId());
+            }else if(receivedObject.getOperation().equalsIgnoreCase("UPDATE")){
+                supervisorGradeRepository.findById(receivedObject.getId()).ifPresent(sa -> {
+                    sa.setDate(receivedObject.getDate());
+                    sa.setId(receivedObject.getId());
+                    sa.setParticipantId(receivedObject.getParticipantId());
+                    sa.setPhase(receivedObject.getPhase());
+                    sa.setSupervisorGradeId(receivedObject.getSupervisorGradeId());
+
+                    supervisorGradeRepository.save(sa);
+                    eventStoreHandler("supervisor_grade", "SUPERVISOR_GRADE_UPDATE", sa, sa.getId());
+                });
+            }
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    @KafkaListener(topics = "supervisor_result_topic", groupId = groupId)
+    public void consumeSupervisorGradeResult(String message){
+        LOGGER.info(String.format("Message Supervisor Result received -> %s", message));
+        try {
+            // Mengubah string JSON menjadi objek
+            ObjectMapper objectMapper = new ObjectMapper();
+            SupervisorGradeResultKafka receivedObject = objectMapper.readValue(message, SupervisorGradeResultKafka.class);
+
+            // Lakukan operasi apa pun pada objek yang diterima
+            System.out.println("==============-----------------------------==============");
+            System.out.println("ID: " + receivedObject.getId());
+            System.out.println("Data: " + receivedObject.toString());
+            System.out.println("==============-----------------------------==============");
+
+
+            // proses melakukan save pada tabel account
+            if(receivedObject.getOperation().equalsIgnoreCase("ADDED")){
+                SupervisorGradeResult result = new SupervisorGradeResult();
+
+                result.setId(receivedObject.getId());
+                result.setAspectId(receivedObject.getAspectId());
+                result.setSupervisorGradeId(receivedObject.getSupervisorGradeId());
+                result.setValue(receivedObject.getValue());
+
+                supervisorGradeResultRepository.save(result);
+                eventStoreHandler("supervisor_grade_result", "SUPERVISOR_GRADE_RESULT_ADDED", result, result.getId());
+            }else if(receivedObject.getOperation().equalsIgnoreCase("UPDATE")){
+                supervisorGradeResultRepository.findById(receivedObject.getId()).ifPresent(r -> {
+                    r.setAspectId(receivedObject.getAspectId());
+                    r.setSupervisorGradeId(receivedObject.getSupervisorGradeId());
+                    r.setValue(receivedObject.getValue());
+
+                    supervisorGradeResultRepository.save(r);
+                    eventStoreHandler("supervisor_grade_result", "SUPERVISOR_GRADE_RESULT_UPDATE", r, r.getId());
+                });
+            }
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @KafkaListener(topics = "supervisor_aspect_topic", groupId = groupId)
+    public void consumeSupervisorGradeAspect(String message){
+        LOGGER.info(String.format("Message Supervisor Aspect received -> %s", message));
+        try {
+            // Mengubah string JSON menjadi objek
+            ObjectMapper objectMapper = new ObjectMapper();
+            SupervisorGradeAspectKafka receivedObject = objectMapper.readValue(message, SupervisorGradeAspectKafka.class);
+
+            // Lakukan operasi apa pun pada objek yang diterima
+            System.out.println("==============-----------------------------==============");
+            System.out.println("ID: " + receivedObject.getId());
+            System.out.println("Data: " + receivedObject.toString());
+            System.out.println("==============-----------------------------==============");
+
+
+            // proses melakukan save pada tabel account
+            if(receivedObject.getOperation().equalsIgnoreCase("ADDED")){
+                SupervisorGradeAspect aspect = new SupervisorGradeAspect();
+
+                aspect.setDescription(receivedObject.getDescription());
+                aspect.setGradeWeight(receivedObject.getGradeWeight());
+                aspect.setId(receivedObject.getId());
+
+                supervisorGradeAspectRepository.save(aspect);
+                eventStoreHandler("supervisor_grade_aspect", "SUPERVISOR_GRADE_ASPECT_ADDED", aspect, aspect.getId());
+            }else if(receivedObject.getOperation().equalsIgnoreCase("UPDATE")){
+                supervisorGradeAspectRepository.findById(receivedObject.getId()).ifPresent(as -> {
+                    as.setDescription(receivedObject.getDescription());
+                    as.setGradeWeight(receivedObject.getGradeWeight());
+
+                    supervisorGradeAspectRepository.save(as);
+                    eventStoreHandler("supervisor_grade_aspect", "SUPERVISOR_GRADE_ASPECT_UPDATE", as, as.getId());
+                });
+            }
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @KafkaListener(topics = "supervisor_mapping_topic", groupId = groupId)
+    public void consumeSupervisorMapping(String message){
+        LOGGER.info(String.format("Message Supervisor Aspect received -> %s", message));
+        try {
+            // Mengubah string JSON menjadi objek
+            ObjectMapper objectMapper = new ObjectMapper();
+            SupervisorMappingKafka receivedObject = objectMapper.readValue(message, SupervisorMappingKafka.class);
+
+            // Lakukan operasi apa pun pada objek yang diterima
+            System.out.println("==============-----------------------------==============");
+            System.out.println("ID: " + receivedObject.getId());
+            System.out.println("Data: " + receivedObject.toString());
+            System.out.println("==============-----------------------------==============");
+
+
+            // proses melakukan save pada tabel account
+            if(receivedObject.getOperation().equalsIgnoreCase("ADDED")){
+                SupervisorMapping mapping = new SupervisorMapping();
+
+                mapping.setId(receivedObject.getId());
+                mapping.setCompanyMappingId(receivedObject.getCompanyMappingId());
+                mapping.setMappingDate(receivedObject.getMappingDate());
+                mapping.setParticipantMappingId(receivedObject.getParticipantMappingId());
+                mapping.setProdiId(receivedObject.getProdiId());
+                mapping.setSupervisorMappingId(receivedObject.getSupervisorMappingId());
+
+                supervisorMappingRepository.save(mapping);
+                eventStoreHandler("supervisor_mapping", "SUPERVISOR_MAPPING_ADDED", mapping, mapping.getId());
+            }else if(receivedObject.getOperation().equalsIgnoreCase("UPDATE")){
+                supervisorMappingRepository.findById(receivedObject.getId()).ifPresent(m -> {
+                    m.setCompanyMappingId(receivedObject.getCompanyMappingId());
+                    m.setMappingDate(receivedObject.getMappingDate());
+                    m.setParticipantMappingId(receivedObject.getParticipantMappingId());
+                    m.setProdiId(receivedObject.getProdiId());
+                    m.setSupervisorMappingId(receivedObject.getSupervisorMappingId());
+
+                    supervisorMappingRepository.save(m);
+                    eventStoreHandler("supervisor_mapping", "SUPERVISOR_MAPPING_UPDATE", m, m.getId());
                 });
             }
 
