@@ -27,4 +27,7 @@ public interface SeminarFormRepository extends JpaRepository<SeminarForm,Integer
 
     @Query(value = "select * from seminar_form where participant_id = :id and examiner_type = :type", nativeQuery = true)
     Optional<SeminarForm> findByParticipantAndTypeForm(@Param("id") Integer idParticipant,@Param("type") Integer type);
+
+    @Query(value = "select * from seminar_form where is_finalization = :isFinalization",nativeQuery = true)
+    List<SeminarForm> findByIsFinalization(@Param("isFinalization") Integer isFinalization);
 }

@@ -34,4 +34,10 @@ public class SeminarForm {
 
     @Column(name = "comment", nullable = true)
     private String comment;
+
+    @Column(name = "is_finalization")
+    private Integer isFinalization;
+
+    @Column(name = "total_value")
+    private Float totalValue;
 }

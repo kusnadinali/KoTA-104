@@ -40,6 +40,6 @@ public interface ICourseService {
 
     List<RecapitulationCourseDto> getAllRecapitulationByYearAndProdiId(Integer year, Integer prodiId);
 
-
+    void finalizationAllCourseForm();
     // void updateComponentCourse(Integer idComponent);
 }

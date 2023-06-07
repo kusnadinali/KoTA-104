@@ -38,4 +38,7 @@ public class CourseForm {
 
     @Column(name = "sks")
     private Integer sks;
+
+    @Column(name = "is_finalization")
+    private Integer isFinalization;
 }

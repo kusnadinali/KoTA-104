@@ -97,4 +97,10 @@ public class CourseController {
     public ResponseEntity<Object> getRecapitulationCourseByYearAndProdi(@RequestParam("year") Integer year, @RequestParam("prodiId") Integer prodiId){
         return ResponseHandler.generateResponse("Get Recapitulation By Year And ProdiId succeed",HttpStatus.OK, courseService.getAllRecapitulationByYearAndProdiId(year, prodiId));
     }
+
+    @PostMapping("/form/finalization") //checked
+    public ResponseEntity<Object> finalizationAllCourse(){
+        courseService.finalizationAllCourseForm();
+        return ResponseHandler.generateResponse("Finalization All Course Form succeed",HttpStatus.OK);
+    }
 }

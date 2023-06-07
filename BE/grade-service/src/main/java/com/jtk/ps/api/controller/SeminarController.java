@@ -42,10 +42,10 @@ public class SeminarController {
         return ResponseHandler.generateResponse("Get all company succeed",HttpStatus.OK, seminarService.getAllCompany());
     }
 
-    @GetMapping("/company/{idCompany}") // checked
-    public ResponseEntity<Object> getParticipantByCompany(@PathVariable("idCompany") Integer idCompany){
-        return ResponseHandler.generateResponse("Get all participant by company",HttpStatus.OK,seminarService.getAllParticipantByCompany(idCompany));
-    }
+    // @GetMapping("/company/{idCompany}") // checked
+    // public ResponseEntity<Object> getParticipantByCompany(@PathVariable("idCompany") Integer idCompany){
+    //     return ResponseHandler.generateResponse("Get all participant by company",HttpStatus.OK,seminarService.getAllParticipantByCompany(idCompany));
+    // }
 
     @GetMapping("/criteria") // checked
     public ResponseEntity<Object> getAllSeminarCriteria(){
@@ -97,16 +97,6 @@ public class SeminarController {
         return ResponseHandler.generateResponse("Get All Examiner Succeed",HttpStatus.OK,seminarService.getExaminer());
     }
 
-    @GetMapping("/download")
-    public ResponseEntity<Resource> getFile() {
-        String filename = "tutorials.xlsx";
-        InputStreamResource file = new InputStreamResource(seminarService.load());
-
-        return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-            .contentType(MediaType.parseMediaType("application/vnd.ms-excel"))
-            .body(file);
-    }
 
     @GetMapping("/generate-seminar/type")
     public ResponseEntity<Resource> getXLS(@RequestParam("year") Integer year, @RequestParam("prodiId") Integer prodiId, @RequestParam("formType") Integer formType) {
@@ -130,6 +120,17 @@ public class SeminarController {
             .body(file);
     }
 
+    @PostMapping("/form/finalization/{idForm}") // checked
+    public ResponseEntity<Object> finalizationByForm(@PathVariable("idForm") Integer idForm){
+        seminarService.finalizationByForm(idForm);
+        return ResponseHandler.generateResponse("Finalization Seminar Form succeed",HttpStatus.OK);
+    }
+
+    @PostMapping("/form/finalization") // checked
+    public ResponseEntity<Object> finalization(){
+        seminarService.finalizationAllForm();
+        return ResponseHandler.generateResponse("Finalization All Seminar Form succeed",HttpStatus.OK);
+    }
     // @PutMapping("/values/{id_form}")
     // public ResponseEntity<Object> updateValueSeminarByFormId(@PathVariable("id_form") Integer idForm,@RequestBody List<SeminarValuesDto> newValue){
         
