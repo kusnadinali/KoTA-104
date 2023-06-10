@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.jtk.ps.api.dto.CompanyDto;
 import com.jtk.ps.api.dto.ExaminerSeminarDto;
+import com.jtk.ps.api.dto.IsFinalizationDto;
 import com.jtk.ps.api.dto.ParticipantDto;
 import com.jtk.ps.api.dto.RecapitulationResponseDto;
 import com.jtk.ps.api.dto.SeminarCriteriaDto;
@@ -52,5 +53,5 @@ public interface ISeminarService {
 
     public ByteArrayInputStream loadSeminar(Integer year, Integer prodiId);
 
-
+    public IsFinalizationDto isFinalization();
 }

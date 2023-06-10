@@ -177,7 +177,7 @@ public class CourseService implements ICourseService{
 
     @Override
     public List<CourseFormResponseDto> getAllCourse() {
-        List<CourseForm> courseForms = courseFormRepository.findAllCourse();
+        List<CourseForm> courseForms = courseFormRepository.findAllCourse(Integer.parseInt(Year.now().toString()));
 
         List<CourseFormResponseDto> courseFormResponseDtos = new ArrayList<>();
         courseForms.forEach(c -> {
@@ -227,6 +227,7 @@ public class CourseService implements ICourseService{
         courseForm.setTahunAjaranEnd(courseFormRequestDto.getTahunAjaranEnd());
         courseForm.setTahunAjaranStart(courseFormRequestDto.getTahunAjaranStart());
         courseForm.setIsDeleted(0);
+        courseForm.setIsFinalization(0);
 
         courseForm = courseFormRepository.save(courseForm);
 
@@ -946,7 +947,7 @@ public class CourseService implements ICourseService{
 
     @Override
     public void finalizationAllCourseForm() {
-        List<CourseForm> courseAll = courseFormRepository.findAllCourse();
+        List<CourseForm> courseAll = courseFormRepository.findAllCourse(Integer.parseInt(Year.now().toString()));
 
         courseAll.forEach(c -> {
             c.setIsFinalization(1);

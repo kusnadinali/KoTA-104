@@ -131,6 +131,11 @@ public class SeminarController {
         seminarService.finalizationAllForm();
         return ResponseHandler.generateResponse("Finalization All Seminar Form succeed",HttpStatus.OK);
     }
+
+    @GetMapping("/form/finalization") // checked
+    public ResponseEntity<Object> isAllfinalization(){
+        return ResponseHandler.generateResponse("Finalization All Seminar Form succeed",HttpStatus.OK, seminarService.isFinalization());
+    }
     // @PutMapping("/values/{id_form}")
     // public ResponseEntity<Object> updateValueSeminarByFormId(@PathVariable("id_form") Integer idForm,@RequestBody List<SeminarValuesDto> newValue){
         

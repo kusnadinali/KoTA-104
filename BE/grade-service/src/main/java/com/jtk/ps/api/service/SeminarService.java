@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jtk.ps.api.dto.CompanyDto;
 import com.jtk.ps.api.dto.ExaminerSeminarDto;
+import com.jtk.ps.api.dto.IsFinalizationDto;
 import com.jtk.ps.api.dto.ParticipantDto;
 import com.jtk.ps.api.dto.RecapitulationResponseDto;
 import com.jtk.ps.api.dto.SeminarValueParticipantDto;
@@ -464,4 +465,14 @@ public class SeminarService implements ISeminarService{
         ByteArrayInputStream in = ExcelHelper.recapSeminartoExcel(criterias,Llist, listTotal);
         return in;
     }
+
+    @Override
+    public IsFinalizationDto isFinalization() {
+        IsFinalizationDto response = new IsFinalizationDto();
+
+        response.setIsFinalization(seminarFormRepository.isAllFinalization(Integer.parseInt(Year.now().toString())));
+        return response;
+    }
+
+    
 }
