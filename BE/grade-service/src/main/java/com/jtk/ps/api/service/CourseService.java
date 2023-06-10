@@ -1,5 +1,6 @@
 package com.jtk.ps.api.service;
 
+import java.io.ByteArrayInputStream;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ import com.jtk.ps.api.dto.RecapitulationCourseDto;
 import com.jtk.ps.api.dto.RecapitulationCriteriaDto;
 import com.jtk.ps.api.dto.RecapitulationParticipantDto;
 import com.jtk.ps.api.dto.TypeOfAspectEvaluationDto;
+import com.jtk.ps.api.helper.ExcelHelper;
 import com.jtk.ps.api.model.Account;
 import com.jtk.ps.api.model.AssessmentAspect;
 import com.jtk.ps.api.model.ComponentCourse;
@@ -955,5 +957,23 @@ public class CourseService implements ICourseService{
         });
     }
     
+    @Override
+    public ByteArrayInputStream loadCourse(Integer year, Integer prodiId) {
+        List<CourseForm> courseForms = new ArrayList<>();
+
+        if(Integer.parseInt(Year.now().toString()) == year){
+            courseForms = courseFormRepository.findAllCourseByYearAndProdiId(year, prodiId);
+        }else{
+            courseForms = courseFormRepository.findAllOldCourseByYearAndProdiId(year, prodiId);
+        }
+        List<List<ComponentAndCriteriasDto>> listCC = new ArrayList<>();
+        for(CourseForm course : courseForms){
+            List<ComponentAndCriteriasDto> temp = getCriteriaComponentByCourseFormId(course.getId());
+            listCC.add(temp);
+        }
+        List<RecapitulationCourseDto> recap = getAllRecapitulationByYearAndProdiId(year, prodiId);
+        ByteArrayInputStream in = ExcelHelper.recapCoursetoExcel(recap, listCC);
+        return in;
+    }
     
 }
