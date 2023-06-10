@@ -1,5 +1,7 @@
 package com.jtk.ps.api.model;
 
+import java.util.Date;
+
 import javax.persistence.*;
 
 import lombok.AllArgsConstructor;
@@ -7,21 +9,24 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "account")
+@Table(name = "supervisor_grade")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Account {
+public class SupervisorGrade {
     
     @Id
     @Column(unique = true, nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "username", nullable = false)
-    private String username;
+    private Integer phase;
 
-    private Integer role_id;
+    @Column(name = "participant_id")
+    private Integer participantId;
 
-    private Integer is_delete;
+    private Date date;
+
+    @Column(name = "supervisor_id_grade")
+    private Integer supervisorGradeId;
 }
