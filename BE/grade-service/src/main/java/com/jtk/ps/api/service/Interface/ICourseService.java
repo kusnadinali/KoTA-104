@@ -1,5 +1,6 @@
 package com.jtk.ps.api.service.Interface;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 
 import com.jtk.ps.api.dto.ComponentCourseDto;
@@ -41,5 +42,7 @@ public interface ICourseService {
     List<RecapitulationCourseDto> getAllRecapitulationByYearAndProdiId(Integer year, Integer prodiId);
 
     void finalizationAllCourseForm();
+
+    public ByteArrayInputStream loadCourse(Integer year, Integer prodiId);
     // void updateComponentCourse(Integer idComponent);
 }
