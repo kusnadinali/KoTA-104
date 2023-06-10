@@ -5,10 +5,6 @@ import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-// import org.slf4j.Logger;
-// import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -47,7 +43,7 @@ import com.jtk.ps.api.service.Interface.ISeminarService;
 @Service
 public class SeminarService implements ISeminarService{
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(SeminarService.class);
+    // private static final Logger LOGGER = LoggerFactory.getLogger(SeminarService.class);
 
     @Autowired
     @Lazy
@@ -170,25 +166,26 @@ public class SeminarService implements ISeminarService{
     }
 
     @Override
-    public void updateSeminarCriteria(Integer idSeminarCriteria, SeminarCriteriaRequestDto criteriaRequestDto) {
+    public SeminarCriteria updateSeminarCriteria(Integer idSeminarCriteria, SeminarCriteriaRequestDto criteriaRequestDto) {
         
-        LOGGER.info(String.format("*** value of criteria ==> %s", criteriaRequestDto.toString()));
         Optional<SeminarCriteria> criteriaUpdate = seminarCriteriaRepository.findById(idSeminarCriteria);
-
-        criteriaUpdate.ifPresent(c -> {
+        SeminarCriteria temp = new SeminarCriteria();
+        if(criteriaUpdate.isPresent()){
+            
             if(criteriaRequestDto.getCriteriaName() != null){
-                c.setCriteriaName(criteriaRequestDto.getCriteriaName());
+                criteriaUpdate.get().setCriteriaName(criteriaRequestDto.getCriteriaName());
             }
             if(criteriaRequestDto.getCriteriaBobot() !=null){
-                c.setCriteriaBobot(criteriaRequestDto.getCriteriaBobot());
+                criteriaUpdate.get().setCriteriaBobot(criteriaRequestDto.getCriteriaBobot());
             }
             if(criteriaRequestDto.getIsSelected() != null){
-                c.setIsSelected(criteriaRequestDto.getIsSelected());
+                criteriaUpdate.get().setIsSelected(criteriaRequestDto.getIsSelected());
             }
 
-            SeminarCriteria temp = seminarCriteriaRepository.save(c);
+            temp = seminarCriteriaRepository.save(criteriaUpdate.get());
             eventStoreHandler("seminar_criteria", "SEMINAR_CRITERIA_UPDATE", temp, temp.getId());
-        });
+        }
+        return temp;
     }
 
     @Override
@@ -343,23 +340,7 @@ public class SeminarService implements ISeminarService{
         });
         return penguji;
     }
-
-    // private Float getTotalValueByForm(Integer formId,Integer year){
-    //     List<SeminarValues> values = seminarValuesRepository.findAllByForm(formId);
-    //     final Float[] total = {0f};
-    //     values.forEach(v -> {
-    //         String eventType = "SEMINAR_CRITERIA_UPDATE";
-    //         EventStore eventStoreCriteria = eventStoreRepository.getLastUpdateEvent(v.getSeminarCriteriaId(), eventType, year);
-    //         try {
-    //             JsonNode rootNode = objectMapper.readTree(eventStoreCriteria.getEventData());
-    //             total[0] = total[0] + (v.getValue()/100*rootNode.get("criteriaBobot").asInt());
-    //         } catch (Exception e) {
-    //             e.printStackTrace();;
-    //         }
-    //     });
-    //     return total[0];
-    // }
-
+    
     private List<SeminarTotalValueDto> getRecapitulationTotal(Integer year, Integer prodiId){
         
         List<Participant> participants = participantRepository.findAllByYearAndProdi(year, prodiId);
@@ -390,9 +371,10 @@ public class SeminarService implements ISeminarService{
                 seminarTotalValueDto.setParticipant(participantDto);
                 
                 seminarTotalValueDto.setNilaiTotal(
-                    (
-                        form1.get().getTotalValue() + form2.get().getTotalValue() + form3.get().getTotalValue()
-                    )/3
+                    ((form1.isPresent() && form1.get().getTotalValue() != null ? form1.get().getTotalValue() : 0.0f) +
+                    (form2.isPresent() && form2.get().getTotalValue() != null ? form2.get().getTotalValue() : 0.0f) +
+                    (form3.isPresent() && form3.get().getTotalValue() != null ? form3.get().getTotalValue() : 0.0f)
+                    ) / 3
                 );
                 nilaiTotal.add(seminarTotalValueDto);
             }
@@ -441,11 +423,11 @@ public class SeminarService implements ISeminarService{
 
         response.setPembimbing(pembimbing);
         response.setPenguji(penguji);
-        
 
         return response;
     }
 
+    @Override
     public ByteArrayInputStream loadSeminarType(Integer year, Integer prodiId, Integer formType) {
         List<SeminarCriteria> criterias = seminarCriteriaRepository.findAllBySelected();
         List<SeminarValueParticipantDto> list = this.getRecapitulationByTypeForm(year, prodiId, formType);
@@ -454,6 +436,7 @@ public class SeminarService implements ISeminarService{
         return in;
     }
 
+    @Override
     public ByteArrayInputStream loadSeminar(Integer year, Integer prodiId) {
         List<SeminarCriteria> criterias = seminarCriteriaRepository.findAllBySelected();
         List<List<SeminarValueParticipantDto>> Llist = new ArrayList<>();

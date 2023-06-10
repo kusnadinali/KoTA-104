@@ -28,7 +28,7 @@ public interface ISeminarService {
 
     SeminarCriteria createSeminarCriteria(SeminarCriteriaRequestDto seminarCriteriaRequestDto) ;
     
-    void updateSeminarCriteria(Integer idSeminarCriteria, SeminarCriteriaRequestDto seminarCriteriaRequestDto);
+    SeminarCriteria updateSeminarCriteria(Integer idSeminarCriteria, SeminarCriteriaRequestDto seminarCriteriaRequestDto);
     
     void deleteSeminarCriteria(Integer idSeminarCriteria);
 
