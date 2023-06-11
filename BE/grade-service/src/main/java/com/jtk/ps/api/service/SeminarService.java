@@ -13,10 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jtk.ps.api.dto.CompanyNameDto;
+import com.jtk.ps.api.dto.CompanyDto;
 import com.jtk.ps.api.dto.ExaminerSeminarDto;
+import com.jtk.ps.api.dto.IsFinalizationDto;
 import com.jtk.ps.api.dto.ParticipantDto;
 import com.jtk.ps.api.dto.RecapitulationResponseDto;
 import com.jtk.ps.api.dto.SeminarValueParticipantDto;
@@ -35,7 +35,6 @@ import com.jtk.ps.api.model.Participant;
 import com.jtk.ps.api.model.SeminarCriteria;
 import com.jtk.ps.api.model.SeminarForm;
 import com.jtk.ps.api.model.SeminarValues;
-import com.jtk.ps.api.model.Tutorial;
 import com.jtk.ps.api.repository.AccountRepository;
 import com.jtk.ps.api.repository.CompanyRepository;
 import com.jtk.ps.api.repository.EventStoreRepository;
@@ -43,7 +42,6 @@ import com.jtk.ps.api.repository.ParticipantRepository;
 import com.jtk.ps.api.repository.SeminarCriteriaRepository;
 import com.jtk.ps.api.repository.SeminarFormRepository;
 import com.jtk.ps.api.repository.SeminarValuesRepository;
-import com.jtk.ps.api.repository.TutorialRepository;
 import com.jtk.ps.api.service.Interface.ISeminarService;
 
 @Service
@@ -80,9 +78,6 @@ public class SeminarService implements ISeminarService{
     private EventStoreRepository eventStoreRepository;
 
     @Autowired
-    TutorialRepository repository;
-
-    @Autowired
     private ObjectMapper objectMapper;
 
     private void eventStoreHandler(String entityId, String eventType, Object object,Integer eventDataId){
@@ -102,18 +97,19 @@ public class SeminarService implements ISeminarService{
     }
 
     @Override
-    public List<CompanyNameDto> getAllCompany() {
+    public List<CompanyDto> getAllCompany() {
         List<Company> company = companyRepository.findAll();
 
-        List<CompanyNameDto> companyNameDtos = new ArrayList<>();
+        List<CompanyDto> companyDtos = new ArrayList<>();
         company.forEach(c -> {
-            CompanyNameDto companyNameDtoTemp = new CompanyNameDto();
-            companyNameDtoTemp.setId(c.getId());
-            companyNameDtoTemp.setName(c.getCompanyName());
-            companyNameDtos.add(companyNameDtoTemp);
+            CompanyDto temp = new CompanyDto();
+            temp.setId(c.getId());
+            temp.setName(c.getCompanyName());
+            temp.setParticipants(this.getAllParticipantByCompany(c.getId()));
+            companyDtos.add(temp);
         });
         
-        return companyNameDtos;
+        return companyDtos;
     }
 
     @Override
@@ -338,23 +334,7 @@ public class SeminarService implements ISeminarService{
                 SeminarValueParticipantDto seminarValueParticipantDto = new SeminarValueParticipantDto();
                 
                 // jika menggunakan tahun sekarang
-                if(year == LocalDateTime.now().getYear()){
-                    seminarValueParticipantDto.setNilaiTotal(seminarValuesRepository.totalSeminarValuesByForm(sftemp.getId()));
-                }else{
-                    seminarValueParticipantDto.setNilaiTotal(Float.valueOf(0));
-                    values.forEach(v -> {
-                        String eventType = "SEMINAR_CRITERIA_UPDATE";
-                        EventStore eventStoreCriteria = eventStoreRepository.getLastUpdateEvent(v.getSeminarCriteriaId(), eventType, year);
-                        try {
-                            JsonNode rootNode = objectMapper.readTree(eventStoreCriteria.getEventData());
-                            seminarValueParticipantDto.setNilaiTotal(
-                                seminarValueParticipantDto.getNilaiTotal()+(v.getValue()/100*rootNode.get("criteriaBobot").asInt())
-                            );
-                        } catch (Exception e) {
-                            e.printStackTrace();;
-                        }
-                    });
-                }
+                seminarValueParticipantDto.setNilaiTotal(sftemp.getTotalValue());
                 seminarValueParticipantDto.setNilai(values);
                 seminarValueParticipantDto.setPeserta(participantDto);
 
@@ -364,21 +344,21 @@ public class SeminarService implements ISeminarService{
         return penguji;
     }
 
-    private Float getTotalValueByForm(Integer formId,Integer year){
-        List<SeminarValues> values = seminarValuesRepository.findAllByForm(formId);
-        final Float[] total = {0f};
-        values.forEach(v -> {
-            String eventType = "SEMINAR_CRITERIA_UPDATE";
-            EventStore eventStoreCriteria = eventStoreRepository.getLastUpdateEvent(v.getSeminarCriteriaId(), eventType, year);
-            try {
-                JsonNode rootNode = objectMapper.readTree(eventStoreCriteria.getEventData());
-                total[0] = total[0] + (v.getValue()/100*rootNode.get("criteriaBobot").asInt());
-            } catch (Exception e) {
-                e.printStackTrace();;
-            }
-        });
-        return total[0];
-    }
+    // private Float getTotalValueByForm(Integer formId,Integer year){
+    //     List<SeminarValues> values = seminarValuesRepository.findAllByForm(formId);
+    //     final Float[] total = {0f};
+    //     values.forEach(v -> {
+    //         String eventType = "SEMINAR_CRITERIA_UPDATE";
+    //         EventStore eventStoreCriteria = eventStoreRepository.getLastUpdateEvent(v.getSeminarCriteriaId(), eventType, year);
+    //         try {
+    //             JsonNode rootNode = objectMapper.readTree(eventStoreCriteria.getEventData());
+    //             total[0] = total[0] + (v.getValue()/100*rootNode.get("criteriaBobot").asInt());
+    //         } catch (Exception e) {
+    //             e.printStackTrace();;
+    //         }
+    //     });
+    //     return total[0];
+    // }
 
     private List<SeminarTotalValueDto> getRecapitulationTotal(Integer year, Integer prodiId){
         
@@ -408,26 +388,12 @@ public class SeminarService implements ISeminarService{
 
                 SeminarTotalValueDto seminarTotalValueDto = new SeminarTotalValueDto();
                 seminarTotalValueDto.setParticipant(participantDto);
-                // mengambil rata rata dari setiap form penilaian seminar
                 
-                // jika menggunakan tahun sekarang
-                if(year == LocalDateTime.now().getYear()){
-                    seminarTotalValueDto.setNilaiTotal(
-                        (
-                            seminarValuesRepository.totalSeminarValuesByForm(form1.get().getId()) + 
-                            seminarValuesRepository.totalSeminarValuesByForm(form2.get().getId()) +
-                            seminarValuesRepository.totalSeminarValuesByForm(form3.get().getId())
-                        )/3
-                    );
-                }else{
-                    // harus mendapatkan total 
-                    seminarTotalValueDto.setNilaiTotal(Float.valueOf(0));
-                    seminarTotalValueDto.setNilaiTotal(
-                            (getTotalValueByForm(form1.get().getId(),year) +
-                            getTotalValueByForm(form2.get().getId(),year) +
-                            getTotalValueByForm(form3.get().getId(),year))/3
-                        );
-                }
+                seminarTotalValueDto.setNilaiTotal(
+                    (
+                        form1.get().getTotalValue() + form2.get().getTotalValue() + form3.get().getTotalValue()
+                    )/3
+                );
                 nilaiTotal.add(seminarTotalValueDto);
             }
         });
@@ -447,6 +413,23 @@ public class SeminarService implements ISeminarService{
         return response;
     }
 
+    
+    @Override
+    public void finalizationAllForm() {
+        seminarFormRepository.findByIsFinalization(0).forEach(sf -> {
+            finalizationByForm(sf.getId());
+        });
+    }
+
+    @Override
+    public void finalizationByForm(Integer idForm) {
+        seminarFormRepository.findById(idForm).ifPresent(sf -> {
+            sf.setIsFinalization(1);
+            sf.setTotalValue(seminarValuesRepository.totalSeminarValuesByForm(sf.getId()));
+            seminarFormRepository.save(sf);
+        });
+    }
+
     @Override
     public ExaminerSeminarDto getExaminer() {
         ExaminerSeminarDto response = new ExaminerSeminarDto();
@@ -461,13 +444,6 @@ public class SeminarService implements ISeminarService{
         
 
         return response;
-    }
-
-    public ByteArrayInputStream load() {
-        List<Tutorial> tutorials = repository.findAll();
-
-        ByteArrayInputStream in = ExcelHelper.tutorialsToExcel(tutorials);
-        return in;
     }
 
     public ByteArrayInputStream loadSeminarType(Integer year, Integer prodiId, Integer formType) {
@@ -489,4 +465,14 @@ public class SeminarService implements ISeminarService{
         ByteArrayInputStream in = ExcelHelper.recapSeminartoExcel(criterias,Llist, listTotal);
         return in;
     }
+
+    @Override
+    public IsFinalizationDto isFinalization() {
+        IsFinalizationDto response = new IsFinalizationDto();
+
+        response.setIsFinalization(seminarFormRepository.isAllFinalization(Integer.parseInt(Year.now().toString())));
+        return response;
+    }
+
+    
 }

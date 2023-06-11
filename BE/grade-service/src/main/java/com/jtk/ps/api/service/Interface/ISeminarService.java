@@ -3,8 +3,9 @@ package com.jtk.ps.api.service.Interface;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 
-import com.jtk.ps.api.dto.CompanyNameDto;
+import com.jtk.ps.api.dto.CompanyDto;
 import com.jtk.ps.api.dto.ExaminerSeminarDto;
+import com.jtk.ps.api.dto.IsFinalizationDto;
 import com.jtk.ps.api.dto.ParticipantDto;
 import com.jtk.ps.api.dto.RecapitulationResponseDto;
 import com.jtk.ps.api.dto.SeminarCriteriaDto;
@@ -17,7 +18,7 @@ import com.jtk.ps.api.model.SeminarForm;
 
 public interface ISeminarService {
     
-    List<CompanyNameDto> getAllCompany();
+    List<CompanyDto> getAllCompany();
 
     List<ParticipantDto> getAllParticipantByCompany(Integer idCompany);
 
@@ -44,10 +45,13 @@ public interface ISeminarService {
 
     public ExaminerSeminarDto getExaminer();
 
-    public ByteArrayInputStream load();
+    public void finalizationByForm(Integer idForm);
+
+    public void finalizationAllForm();
 
     public ByteArrayInputStream loadSeminarType(Integer year, Integer prodiId, Integer formType);
+
     public ByteArrayInputStream loadSeminar(Integer year, Integer prodiId);
 
-
+    public IsFinalizationDto isFinalization();
 }

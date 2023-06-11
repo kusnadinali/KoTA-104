@@ -27,4 +27,10 @@ public interface SeminarFormRepository extends JpaRepository<SeminarForm,Integer
 
     @Query(value = "select * from seminar_form where participant_id = :id and examiner_type = :type", nativeQuery = true)
     Optional<SeminarForm> findByParticipantAndTypeForm(@Param("id") Integer idParticipant,@Param("type") Integer type);
+
+    @Query(value = "select * from seminar_form where is_finalization = :isFinalization",nativeQuery = true)
+    List<SeminarForm> findByIsFinalization(@Param("isFinalization") Integer isFinalization);
+
+    @Query(value = "SELECT case WHEN ( SELECT COUNT(*) FROM seminar_form  WHERE YEAR(date_seminar) = :year AND is_finalization = 0 ) = 0 THEN 1 ELSE 0 END AS is_all_finalized", nativeQuery = true)
+    Integer isAllFinalization(Integer year);
 }

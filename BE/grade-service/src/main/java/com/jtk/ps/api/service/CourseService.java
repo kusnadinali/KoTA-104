@@ -1,5 +1,6 @@
 package com.jtk.ps.api.service;
 
+import java.io.ByteArrayInputStream;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -16,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.JsonNode;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jtk.ps.api.dto.ComponentAndCriteriasDto;
 import com.jtk.ps.api.dto.ComponentCourseDto;
@@ -30,6 +31,7 @@ import com.jtk.ps.api.dto.RecapitulationCourseDto;
 import com.jtk.ps.api.dto.RecapitulationCriteriaDto;
 import com.jtk.ps.api.dto.RecapitulationParticipantDto;
 import com.jtk.ps.api.dto.TypeOfAspectEvaluationDto;
+import com.jtk.ps.api.helper.ExcelHelper;
 import com.jtk.ps.api.model.Account;
 import com.jtk.ps.api.model.AssessmentAspect;
 import com.jtk.ps.api.model.ComponentCourse;
@@ -46,6 +48,8 @@ import com.jtk.ps.api.model.SeminarValues;
 import com.jtk.ps.api.model.SupervisorGradeAspect;
 import com.jtk.ps.api.model.SupervisorGradeResult;
 import com.jtk.ps.api.model.Timeline;
+import com.jtk.ps.api.model.TotalComponents;
+import com.jtk.ps.api.model.TotalCourses;
 import com.jtk.ps.api.model.Valuation;
 import com.jtk.ps.api.repository.AccountRepository;
 import com.jtk.ps.api.repository.AssessmentAspectRepository;
@@ -64,6 +68,8 @@ import com.jtk.ps.api.repository.SeminarValuesRepository;
 import com.jtk.ps.api.repository.SupervisorGradeAspectRepository;
 import com.jtk.ps.api.repository.SupervisorGradeResultRepository;
 import com.jtk.ps.api.repository.TimelineRepository;
+import com.jtk.ps.api.repository.TotalComponentsRepository;
+import com.jtk.ps.api.repository.TotalCoursesRepository;
 import com.jtk.ps.api.repository.ValuationRepository;
 import com.jtk.ps.api.service.Interface.ICourseService;
 
@@ -145,6 +151,14 @@ public class CourseService implements ICourseService{
     private TimelineRepository timelineRepository;
 
     @Autowired
+    @Lazy
+    private TotalComponentsRepository totalComponentsRepository;
+
+    @Autowired
+    @Lazy
+    private TotalCoursesRepository totalCoursesRepository;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     private void eventStoreHandler(String entityId, String eventType, Object object,Integer eventDataId){
@@ -165,7 +179,7 @@ public class CourseService implements ICourseService{
 
     @Override
     public List<CourseFormResponseDto> getAllCourse() {
-        List<CourseForm> courseForms = courseFormRepository.findAllCourse();
+        List<CourseForm> courseForms = courseFormRepository.findAllCourse(Integer.parseInt(Year.now().toString()));
 
         List<CourseFormResponseDto> courseFormResponseDtos = new ArrayList<>();
         courseForms.forEach(c -> {
@@ -215,6 +229,7 @@ public class CourseService implements ICourseService{
         courseForm.setTahunAjaranEnd(courseFormRequestDto.getTahunAjaranEnd());
         courseForm.setTahunAjaranStart(courseFormRequestDto.getTahunAjaranStart());
         courseForm.setIsDeleted(0);
+        courseForm.setIsFinalization(0);
 
         courseForm = courseFormRepository.save(courseForm);
 
@@ -659,11 +674,33 @@ public class CourseService implements ICourseService{
                 getListComponentRecapitulation(year, prodiId, form, p)
             );
 
-            // // setelah menghitung semua kriterianya
-            tempParticipantDto.setTotal_course(
-                getTotalCourse(tempParticipantDto.getComponent_data())
-            );
-
+            // setelah menghitung semua kriterianya
+            if(form.getIsFinalization() == 0){
+                Optional<TotalCourses> oldTotalCourses = totalCoursesRepository.findByCourseIdAndParticipantId(form.getId(), p.getId());
+                if(oldTotalCourses.isPresent()){
+                    oldTotalCourses.get().setValue(
+                        getTotalCourse(tempParticipantDto.getComponent_data())
+                    );
+                    totalCoursesRepository.save(oldTotalCourses.get());
+                }else{
+                    TotalCourses newTotalCourses = new TotalCourses();
+                    newTotalCourses.setCourseId(form.getId());
+                    newTotalCourses.setParticipantId(p.getId());
+                    newTotalCourses.setValue(
+                        getTotalCourse(tempParticipantDto.getComponent_data())
+                    );
+                    totalCoursesRepository.save(newTotalCourses);
+                }
+                tempParticipantDto.setTotal_course(
+                    getTotalCourse(tempParticipantDto.getComponent_data())
+                );
+            }else{
+                totalCoursesRepository.findByCourseIdAndParticipantId(form.getId(), p.getId()).ifPresent(t -> {
+                    tempParticipantDto.setTotal_course(
+                        t.getValue()
+                    );
+                });
+            }
             responseParticipantDtos.add(tempParticipantDto);
         });
         return responseParticipantDtos;
@@ -683,7 +720,6 @@ public class CourseService implements ICourseService{
     private List<RecapitulationComponentDto> getListComponentRecapitulation(Integer year, Integer prodiId,CourseForm form,Participant participant){
         
         List<RecapitulationComponentDto> tempRecapitulationComponentDtos = new ArrayList<>();
-        Integer yearNow = Integer.parseInt(Year.now().toString());
         List<ComponentCourse> componentCourses = componentCourseRepository.findAllByFormId(form.getId());
 
         componentCourses.forEach(c -> {
@@ -692,29 +728,37 @@ public class CourseService implements ICourseService{
             int isAverage = c.getIsAverage();
             tempRecapitulationComponentDto.setIdComponent(c.getId());
             tempRecapitulationComponentDto.setNameComponent(c.getName());
-            if(year == yearNow){
-                tempRecapitulationComponentDto.setBobotComponent(c.getBobotComponent());
-            }else{
-                EventStore eventStoreComponent = eventStoreRepository.getLastUpdateBobotComponentCourse(year, c.getId());
-                try {
-                    JsonNode rootNode = objectMapper.readTree(eventStoreComponent.getEventData());
-                    tempRecapitulationComponentDto.setBobotComponent(
-                        rootNode.get("bobotComponent").asInt()
-                    );
-                    isAverage = rootNode.get("isAverage").asInt();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+            tempRecapitulationComponentDto.setBobotComponent(c.getBobotComponent());
 
             // ***************************** Criteria and Values *****************************
             tempRecapitulationComponentDto.setCriteria_data(
                 getListCriteriaRecapitulation(year, prodiId, c, participant)
             );
-
-            tempRecapitulationComponentDto.setTotalValueComponent(
-                getTotalComponent(isAverage,tempRecapitulationComponentDto.getCriteria_data())
-            );
+            
+            // find total 
+            if(form.getIsFinalization() == 0){
+                Optional<TotalComponents> oldTotalComponents = totalComponentsRepository.findByComponentIdAndParticipantId(c.getId(), participant.getId());
+                if(oldTotalComponents.isPresent()){
+                    oldTotalComponents.get().setValue(
+                        getTotalComponent(isAverage,tempRecapitulationComponentDto.getCriteria_data())
+                    );
+                    totalComponentsRepository.save(oldTotalComponents.get());
+                }else{
+                    TotalComponents newTotalComponents = new TotalComponents();
+                    newTotalComponents.setComponentId(c.getId());
+                    newTotalComponents.setParticipantId(participant.getId());
+                    newTotalComponents.setValue(
+                        getTotalComponent(isAverage,tempRecapitulationComponentDto.getCriteria_data())
+                    );
+                    totalComponentsRepository.save(newTotalComponents);
+                }
+                tempRecapitulationComponentDto.setTotalValueComponent(getTotalComponent(isAverage,tempRecapitulationComponentDto.getCriteria_data()));
+            }else{
+                totalComponentsRepository.findByComponentIdAndParticipantId(c.getId(), participant.getId())
+                    .ifPresent(t -> {
+                        tempRecapitulationComponentDto.setTotalValueComponent(t.getValue());
+                    });
+            }
 
             tempRecapitulationComponentDtos.add(tempRecapitulationComponentDto);
         });
@@ -755,19 +799,7 @@ public class CourseService implements ICourseService{
         criteriaComponentCourses.forEach(d -> {
             RecapitulationCriteriaDto tempRecapitulationCriteriaDto = new RecapitulationCriteriaDto();
             
-            if(year == Integer.parseInt(Year.now().toString())){
-                tempRecapitulationCriteriaDto.setBobot(d.getBobotCriteria());
-            }else{
-                EventStore eventStoreCriteria = eventStoreRepository.getLastUpdateBobotCriteriaComponent(year, d.getId());
-                try {
-                    JsonNode rootNode = objectMapper.readTree(eventStoreCriteria.getEventData());
-                    tempRecapitulationCriteriaDto.setBobot(
-                        rootNode.get("bobotCriteria").asInt()
-                    );
-                } catch (Exception e) {
-                    e.printStackTrace();;
-                }
-            }
+            tempRecapitulationCriteriaDto.setBobot(d.getBobotCriteria());
             tempRecapitulationCriteriaDto.setNameForm(d.getNameForm());
             tempRecapitulationCriteriaDto.setFormType(d.getTypeForm());
             tempRecapitulationCriteriaDto.setNameAspect(getAspectNameInForm(d.getIndustryCriteriaId(), d.getSeminarCriteriaId(), d.getSupervisorCriteriaId(), d.getSelfAssessmentCriteriaId(), d.getNameForm()));
@@ -913,6 +945,35 @@ public class CourseService implements ICourseService{
         }
 
         return aspectName;
+    }
+
+    @Override
+    public void finalizationAllCourseForm() {
+        List<CourseForm> courseAll = courseFormRepository.findAllCourse(Integer.parseInt(Year.now().toString()));
+
+        courseAll.forEach(c -> {
+            c.setIsFinalization(1);
+            courseFormRepository.save(c);
+        });
+    }
+    
+    @Override
+    public ByteArrayInputStream loadCourse(Integer year, Integer prodiId) {
+        List<CourseForm> courseForms = new ArrayList<>();
+
+        if(Integer.parseInt(Year.now().toString()) == year){
+            courseForms = courseFormRepository.findAllCourseByYearAndProdiId(year, prodiId);
+        }else{
+            courseForms = courseFormRepository.findAllOldCourseByYearAndProdiId(year, prodiId);
+        }
+        List<List<ComponentAndCriteriasDto>> listCC = new ArrayList<>();
+        for(CourseForm course : courseForms){
+            List<ComponentAndCriteriasDto> temp = getCriteriaComponentByCourseFormId(course.getId());
+            listCC.add(temp);
+        }
+        List<RecapitulationCourseDto> recap = getAllRecapitulationByYearAndProdiId(year, prodiId);
+        ByteArrayInputStream in = ExcelHelper.recapCoursetoExcel(recap, listCC);
+        return in;
     }
     
 }
