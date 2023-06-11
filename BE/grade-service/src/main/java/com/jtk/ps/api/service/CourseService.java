@@ -312,11 +312,11 @@ public class CourseService implements ICourseService{
     }
 
     @Override
-    public List<CriteriaEvaluationFormDto> getCriteriaByEvaluationForm(String formType, Integer prodiId) {
+    public List<CriteriaEvaluationFormDto> getCriteriaByEvaluationForm(String formName, Integer prodiId) {
 
         List<CriteriaEvaluationFormDto> criteriaEvaluationForms = new ArrayList<>();
-        String[] numEvaluation = formType.split(" ");
-        switch (formType) {
+        String[] numEvaluation = formName.split(" ");
+        switch (formName) {
             case "Pembimbing":
                 List<SupervisorGradeAspect> pembimbingAspects = supervisorGradeAspectRepository.findAll();
 
@@ -423,7 +423,8 @@ public class CourseService implements ICourseService{
         
         return listTypes;
     }
-	@Override
+	
+    @Override
 	public List<ComponentCourseDto> getComponentByCourseForm(Integer idForm) {
 		
         List<ComponentCourseDto> response = new ArrayList<>();
