@@ -235,6 +235,12 @@ public class SeminarService implements ISeminarService{
             List<SeminarForm> seminarForms = seminarFormRepository.findAllByParticipantId(idParticipant);
             seminarForms.forEach(s -> {
                 SeminarFormDto temp = new SeminarFormDto();
+                List<SeminarValues> values = seminarValuesRepository.findAllByForm(s.getId());
+                List<SeminarValuesDto> tempValues = new ArrayList<>();
+                values.forEach(v -> {
+                    SeminarValuesDto sDto = new SeminarValuesDto(v.getId(), v.getValue(), v.getSeminarCriteriaId(), v.getSeminarFormId());
+                    tempValues.add(sDto);
+                });
 
                 temp.setId(s.getId());
                 temp.setParticipantId(s.getParticipantId());
@@ -242,6 +248,8 @@ public class SeminarService implements ISeminarService{
                 temp.setExaminerType(s.getExaminerType());
                 temp.setDateSeminar(s.getDateSeminar());
                 temp.setComment(s.getComment());
+                temp.setValues(tempValues);
+                
                 
                 response.add(temp);
             });
