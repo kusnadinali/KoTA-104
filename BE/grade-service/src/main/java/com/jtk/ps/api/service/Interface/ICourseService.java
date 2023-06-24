@@ -29,7 +29,7 @@ public interface ICourseService {
 
     List<EvaluationFormResponseDto> getEvaluationForm(Integer prodiId);
 
-    List<CriteriaEvaluationFormDto> getCriteriaByEvaluationForm(String formType,Integer prodiId);
+    List<CriteriaEvaluationFormDto> getCriteriaByEvaluationForm(String formType, String formName,Integer prodiId);
 
     List<TypeOfAspectEvaluationDto> getTypeAspectEvaluationForm(String formType,Integer prodiId);
 

@@ -345,12 +345,6 @@ public class KafkaConsumer {
             ObjectMapper objectMapper = new ObjectMapper();
             AssessmentAspectKafka receivedObject = objectMapper.readValue(message, AssessmentAspectKafka.class);
 
-            // Lakukan operasi apa pun pada objek yang diterima
-            System.out.println("==============-----------------------------=========================");
-            System.out.println("ID: " + receivedObject.getId());
-            System.out.println("Data: " + receivedObject.toString());
-
-
             // proses melakukan save pada tabel account
             if(receivedObject.getOperation().equalsIgnoreCase("ADDED")){
                 AssessmentAspect aspect = new AssessmentAspect();

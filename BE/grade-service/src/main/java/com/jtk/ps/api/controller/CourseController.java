@@ -66,8 +66,8 @@ public class CourseController {
     }
 
     @GetMapping("/criteria/evaluation-form/aspect") // checked
-    public ResponseEntity<Object> getAspectEvaluationForm(@RequestParam("formType") String formType,@RequestParam("prodiId") Integer prodiId){
-        return ResponseHandler.generateResponse("Get Aspects Evaluation succeed",HttpStatus.OK, courseService.getCriteriaByEvaluationForm(formType,prodiId));
+    public ResponseEntity<Object> getAspectEvaluationForm(@RequestParam("formType") String formType, @RequestParam("formName") String formName,@RequestParam("prodiId") Integer prodiId){
+        return ResponseHandler.generateResponse("Get Aspects Evaluation succeed",HttpStatus.OK, courseService.getCriteriaByEvaluationForm(formType, formName,prodiId));
     }
 
     @GetMapping("/criteria/evaluation-form/aspect/type") // checked

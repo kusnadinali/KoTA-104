@@ -312,11 +312,17 @@ public class CourseService implements ICourseService{
     }
 
     @Override
-    public List<CriteriaEvaluationFormDto> getCriteriaByEvaluationForm(String formName, Integer prodiId) {
+    public List<CriteriaEvaluationFormDto> getCriteriaByEvaluationForm(String formType, String formName, Integer prodiId) {
 
         List<CriteriaEvaluationFormDto> criteriaEvaluationForms = new ArrayList<>();
-        String[] numEvaluation = formName.split(" ");
-        switch (formName) {
+        String[] numEvaluation = formType.split(" ");
+        String decision = "";
+        if(!formName.equalsIgnoreCase("Industri")){
+            decision = formName;
+        }else{
+            decision = formType;
+        }
+        switch (decision) {
             case "Pembimbing":
                 List<SupervisorGradeAspect> pembimbingAspects = supervisorGradeAspectRepository.findAll();
 
@@ -434,7 +440,7 @@ public class CourseService implements ICourseService{
         componentCourses.forEach(c -> {
             ComponentCourseDto temp = new ComponentCourseDto();
             
-            temp.setBobotComponent(c.getBobotComponent());
+            temp.setBobotComponent(c.getBobotComponent() == null? 0:c.getBobotComponent());
             temp.setCourseId(c.getCourseId());
             temp.setId(c.getId());
             temp.setIsAverage(c.getIsAverage());
@@ -451,7 +457,7 @@ public class CourseService implements ICourseService{
             Optional<ComponentCourse> componentCourse = componentCourseRepository.findById(c.getId());
 
             componentCourse.ifPresent(p -> {
-                p.setBobotComponent(c.getBobotComponent());
+                p.setBobotComponent(c.getBobotComponent() == null? 0:c.getBobotComponent());
                 p.setCourseId(c.getCourseId());
                 p.setIsAverage(c.getIsAverage());
                 p.setName(c.getName());
@@ -711,7 +717,7 @@ public class CourseService implements ICourseService{
         float totalCourse = 0f;
 
         for(RecapitulationComponentDto c : courses){
-            if(c.getBobotComponent() != 0){
+            if(c.getBobotComponent() != null || c.getBobotComponent() != 0){
                 totalCourse += (c.getTotalValueComponent() / 100) * c.getBobotComponent();
             }
         }
@@ -729,7 +735,7 @@ public class CourseService implements ICourseService{
             int isAverage = c.getIsAverage();
             tempRecapitulationComponentDto.setIdComponent(c.getId());
             tempRecapitulationComponentDto.setNameComponent(c.getName());
-            tempRecapitulationComponentDto.setBobotComponent(c.getBobotComponent());
+            tempRecapitulationComponentDto.setBobotComponent(c.getBobotComponent() == null? 0 : c.getBobotComponent());
 
             // ***************************** Criteria and Values *****************************
             tempRecapitulationComponentDto.setCriteria_data(

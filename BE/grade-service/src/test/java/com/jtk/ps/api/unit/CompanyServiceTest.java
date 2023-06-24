@@ -253,10 +253,10 @@ public class CompanyServiceTest {
         when(seminarCriteriaRepository.findAllBySelected()).thenReturn(listSeminarCriteria);
         when(assessmentAspectRepository.findAllByNumEvaluation(Integer.parseInt(numEvaluation[1]),prodiId)).thenReturn(listAspectIndustry);
 
-        List<CriteriaEvaluationFormDto> resultPembimbing = courseService.getCriteriaByEvaluationForm(formNamePembimbing, prodiId);
-        List<CriteriaEvaluationFormDto> resultSA = courseService.getCriteriaByEvaluationForm(formNameSA, prodiId);
-        List<CriteriaEvaluationFormDto> resultSeminar = courseService.getCriteriaByEvaluationForm(formNameSeminar, prodiId);
-        List<CriteriaEvaluationFormDto> resultIndustry = courseService.getCriteriaByEvaluationForm(formTypeIndustri, prodiId);
+        List<CriteriaEvaluationFormDto> resultPembimbing = courseService.getCriteriaByEvaluationForm("",formNamePembimbing, prodiId);
+        List<CriteriaEvaluationFormDto> resultSA = courseService.getCriteriaByEvaluationForm("",formNameSA, prodiId);
+        List<CriteriaEvaluationFormDto> resultSeminar = courseService.getCriteriaByEvaluationForm("",formNameSeminar, prodiId);
+        List<CriteriaEvaluationFormDto> resultIndustry = courseService.getCriteriaByEvaluationForm(formTypeIndustri,"Industri", prodiId);
 
         verify(supervisorGradeAspectRepository, times(1)).findAll();
         verify(selfAssessmentAspectRepository, times(1)).findAll();
